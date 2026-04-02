@@ -1,0 +1,23 @@
+# Entorno virtual
+venv/
+env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# VS Code
+.vscode/
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Jupyter (por si acaso)
+.ipynb_checkpoints/
+
+# Archivos temporales
+*.tmp
+*.log
