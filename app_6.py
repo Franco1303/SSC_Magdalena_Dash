@@ -47,7 +47,7 @@ merged_data= pd.merge(Q, tss, on='Fecha', how='inner')
 # ─────────────────────────────────────────
 # CARGA DE PERFILES DE CAMPO
 # ─────────────────────────────────────────
-PROFILES_BASE = pathlib.Path("DATOS_FRANCISCO") / "DATOS_FRANCISCO"
+PROFILES_BASE = pathlib.Path("DATOS_FRANCISCO") 
 
 def load_all_profiles():
     records = []
@@ -598,7 +598,42 @@ def tab_eda():
             ]),
             dcc.Graph(id="corr-plot", config={"displayModeBar": False}),
         ]),
+        
+                # ── Ranking de correlaciones ──
+        html.Div(style={**CARD}, children=[
+            section_title("Ranking de correlaciones con CSS",
+                          "Correlación de Pearson entre cada banda/índice y CSS, ordenado por valor absoluto"),
+            html.Div(style={"display": "flex", "gap": "16px", "marginBottom": "16px", "alignItems": "center"}, children=[
+                html.Label("Transformación CSS:", style={"fontSize": "13px", "color": COLOR_MUTED, "fontWeight": "600"}),
+                dcc.RadioItems(id="corrbar-transform",
+                               options=[{"label": " CSS", "value": "linear"},{"label": " ln(CSS)", "value": "log"}],
+                               value="log", inline=True, style={"fontSize": "13px"}),
+            ]),
+            dcc.Graph(id="corrbar-plot", config={"displayModeBar": False}),
+        ]),
+
+        # ── Mapa de calor espacio-temporal ──
+        html.Div(style={**CARD}, children=[
+            section_title("Mapa de calor espacio-temporal",
+                          "CSS promedio por estación (km) y fecha de imagen — dataset matcheado"),
+            html.Div(style={"display": "flex", "gap": "16px", "marginBottom": "16px", "alignItems": "center"}, children=[
+                html.Label("Variable:", style={"fontSize": "13px", "color": COLOR_MUTED, "fontWeight": "600"}),
+                dcc.Dropdown(id="heatmap-var",
+                             options=[{"label": v, "value": v} for v in ["SSC"] + BANDAS + INDICES],
+                             value="SSC", clearable=False, style={"width": "180px", "fontSize": "13px"}),
+            ]),
+            dcc.Graph(id="heatmap-plot", config={"displayModeBar": False}),
+        ]),
+
+        # ── Climatograma CSS ──
+        html.Div(style={**CARD}, children=[
+            section_title("Climatograma de CSS",
+                          "Distribución mensual de CSS en el período de estudio — dataset matcheado"),
+            dcc.Graph(id="climo-plot", config={"displayModeBar": False}),
+        ]),
     ])
+    
+    
 
 
 def tab_conclusiones():
@@ -1196,6 +1231,189 @@ def update_hydro(subtab, year_range):
         return html.Div([dcc.Graph(figure=fig, config={"displayModeBar":False}), note])
  
     return html.Div()
+
+# ── Ranking de correlaciones ──
+@app.callback(Output("corrbar-plot","figure"),
+              Input("corrbar-transform","value"),
+              Input("store-df-filtered","data"))
+def update_corrbar(transform, data):
+    if not data: return go.Figure()
+    dff = pd.read_json(data, orient="split")
+    cols = BANDAS + INDICES
+    cols = [c for c in cols if c in dff.columns]
+    if "SSC" not in dff.columns: return go.Figure()
+    y_css = np.log(dff["SSC"]) if transform == "log" else dff["SSC"]
+    y_label = "ln(CSS)" if transform == "log" else "CSS"
+
+    results = []
+    for c in cols:
+        if dff[c].isna().all(): continue
+        try:
+            r, p = pearsonr(dff[c].dropna(), y_css[dff[c].notna()])
+            results.append({"variable": c, "r": r, "r_abs": abs(r), "p": p})
+        except Exception:
+            continue
+
+    res = pd.DataFrame(results).sort_values("r_abs", ascending=True)
+
+    # Color: verde si positivo, rojo si negativo
+    colors = [
+        "#2eaa6b" if r >= 0 else "#c0392b"
+        for r in res["r"]
+    ]
+
+    fig = go.Figure(go.Bar(
+        x=res["r"],
+        y=res["variable"],
+        orientation="h",
+        marker=dict(color=colors, line=dict(width=0)),
+        text=[f"r={r:.3f}  p={'<0.001' if p<0.001 else f'{p:.3f}'}"
+              for r, p in zip(res["r"], res["p"])],
+        textposition="outside",
+        hovertemplate="%{y}<br>r = %{x:.3f}<extra></extra>",
+    ))
+
+    fig.add_vline(x=0, line=dict(color=COLOR_TEXT, width=1, dash="dash"))
+    fig.add_vline(x=0.7,  line=dict(color="#2eaa6b", width=1, dash="dot"), opacity=0.5)
+    fig.add_vline(x=-0.7, line=dict(color="#c0392b", width=1, dash="dot"), opacity=0.5)
+    fig.add_vline(x=-0.7, line=dict(color="#c0392b", width=1, dash="dot"), opacity=0.5)
+
+    fig.add_annotation(x=0.72, y=1.02, xref="x", yref="paper",
+                       text="|r|=0.7", showarrow=False,
+                       font=dict(size=10, color="#2eaa6b"), xanchor="left")
+    fig.add_annotation(x=-0.72, y=1.02, xref="x", yref="paper",
+                       text="|r|=0.7", showarrow=False,
+                       font=dict(size=10, color="#c0392b"), xanchor="right")
+
+    fig.update_layout(
+        height=max(320, len(res) * 32 + 80),
+        paper_bgcolor=COLOR_CARD,
+        plot_bgcolor=COLOR_BG,
+        font=dict(family=FONT_BODY, size=12, color=COLOR_TEXT),
+        xaxis=dict(title=f"Correlación de Pearson con {y_label}",
+                   range=[-1.15, 1.15], showgrid=True, gridcolor=COLOR_BORDER,
+                   zeroline=False),
+        yaxis=dict(showgrid=False),
+        margin=dict(l=80, r=120, t=30, b=50),
+        showlegend=False,
+    )
+    return fig
+
+
+# ── Mapa de calor espacio-temporal ──
+@app.callback(Output("heatmap-plot","figure"),
+              Input("heatmap-var","value"),
+              Input("store-df-filtered","data"))
+def update_heatmap(var, data):
+    if not data: return go.Figure()
+    dff = pd.read_json(data, orient="split")
+    dff["reflectance_date"] = pd.to_datetime(dff["reflectance_date"])
+    if var not in dff.columns: return go.Figure()
+
+    # Pivot: filas = km, columnas = fecha, valores = media de var
+    pivot = (dff.groupby(["km", dff["reflectance_date"].dt.strftime("%Y-%m-%d")])[var]
+               .mean()
+               .reset_index()
+               .pivot(index="km", columns="reflectance_date", values=var))
+
+    # Ordenar km de mayor a menor (desembocadura abajo)
+    pivot = pivot.sort_index(ascending=False)
+
+    # Etiquetas km con color
+    y_labels = [f"Km {k}" for k in pivot.index]
+
+    fig = go.Figure(go.Heatmap(
+        z=pivot.values,
+        x=pivot.columns.tolist(),
+        y=y_labels,
+        colorscale="YlOrRd",
+        colorbar=dict(title=dict(text=var, side="right"),
+                      thickness=14, tickfont=dict(size=11)),
+        hovertemplate="Fecha: %{x}<br>%{y}<br>" + var + ": %{z:.1f}<extra></extra>",
+        xgap=2, ygap=2,
+    ))
+
+    fig.update_layout(
+        height=max(280, len(pivot) * 60 + 100),
+        paper_bgcolor=COLOR_CARD,
+        plot_bgcolor=COLOR_CARD,
+        font=dict(family=FONT_BODY, size=12, color=COLOR_TEXT),
+        xaxis=dict(title="Fecha de imagen", tickangle=-45, showgrid=False),
+        yaxis=dict(showgrid=False),
+        margin=dict(l=80, r=60, t=20, b=80),
+    )
+    return fig
+
+
+# ── Climatograma CSS ──
+@app.callback(Output("climo-plot","figure"),
+              Input("store-df-filtered","data"))
+def update_climo(data):
+    if not data: return go.Figure()
+    dff = pd.read_json(data, orient="split")
+    dff["reflectance_date"] = pd.to_datetime(dff["reflectance_date"])
+    if "SSC" not in dff.columns: return go.Figure()
+
+    dff["mes"] = dff["reflectance_date"].dt.month
+    meses_label = ["Ene","Feb","Mar","Abr","May","Jun",
+                   "Jul","Ago","Sep","Oct","Nov","Dic"]
+
+    fig = go.Figure()
+
+    # Boxplot por mes con puntos superpuestos coloreados por km
+    for mes_num in range(1, 13):
+        sub = dff[dff["mes"] == mes_num]
+        if sub.empty: continue
+        fig.add_trace(go.Box(
+            y=sub["SSC"],
+            x=[meses_label[mes_num-1]] * len(sub),
+            name=meses_label[mes_num-1],
+            marker=dict(color=COLOR_ACCENT, opacity=0.4, size=5),
+            line=dict(color=COLOR_ACCENT),
+            boxmean=True,
+            showlegend=False,
+            hoverinfo="skip",
+        ))
+
+    # Puntos individuales coloreados por km encima
+    for km in sorted(dff["km"].unique()):
+        sub_km = dff[dff["km"] == km]
+        fig.add_trace(go.Scatter(
+            x=[meses_label[m-1] for m in sub_km["mes"]],
+            y=sub_km["SSC"],
+            mode="markers",
+            name=f"Km {km}",
+            marker=dict(size=8, color=KM_COLORS.get(km, COLOR_ACCENT),
+                        line=dict(width=1, color="white"), opacity=0.85),
+            hovertemplate=f"Km {km}<br>Mes: %{{x}}<br>CSS: %{{y:.1f}} mg/L<extra></extra>",
+        ))
+
+    # Línea de media mensual
+    monthly_mean = (dff.groupby("mes")["SSC"].mean()
+                       .reindex(range(1, 13)))
+    fig.add_trace(go.Scatter(
+        x=[meses_label[m-1] for m in monthly_mean.index if not pd.isna(monthly_mean[m])],
+        y=[v for v in monthly_mean.values if not pd.isna(v)],
+        mode="lines+markers",
+        name="Media mensual",
+        line=dict(color=COLOR_TEXT, width=2, dash="dash"),
+        marker=dict(size=7, color=COLOR_TEXT),
+        hovertemplate="Media %{x}: %{y:.1f} mg/L<extra></extra>",
+    ))
+
+    fig.update_layout(
+        height=420,
+        paper_bgcolor=COLOR_CARD,
+        plot_bgcolor=COLOR_BG,
+        font=dict(family=FONT_BODY, size=12, color=COLOR_TEXT),
+        xaxis=dict(title="Mes", categoryorder="array",
+                   categoryarray=meses_label, showgrid=False),
+        yaxis=dict(title="CSS (mg/L)", gridcolor=COLOR_BORDER),
+        legend=dict(orientation="h", y=-0.2),
+        margin=dict(l=60, r=20, t=20, b=80),
+        boxmode="overlay",
+    )
+    return fig
 
 if __name__ == "__main__":
     app.run(debug=True)
