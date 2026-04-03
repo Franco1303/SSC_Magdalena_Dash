@@ -454,6 +454,7 @@ def tab_marco():
                         ("RANS", "(Red+NIR)/(Red+NIR+Blue+Green+SWIR1+SWIR2)", "Índice normalizado para sedimentos"),
                         ("VNES", "(Red+RE1+NIR)/(Blue+Green+Red+NIR+SWIR1+SWIR2)", "Variante extendida con red edge"),
                         ("NDTI", "(Red−Green)/(Red+Green)", "Índice de turbidez normalizado"),
+                        ("NIR/RED", "(NIR)/(Red)", "Relación simple entre NIR y rojo"),
                     ]
                 ]),
             ]),
@@ -464,8 +465,13 @@ def tab_marco():
                      style={"fontFamily": "monospace", "fontSize": "15px",
                             "backgroundColor": f"{COLOR_ACCENT}10", "border": f"1px solid {COLOR_ACCENT}30",
                             "borderRadius": "6px", "padding": "14px 20px", "color": COLOR_TEXT, "marginBottom": "12px"}),
-            html.P("Derivado de conversión dimensional directa. Factor 0.0864 convierte g/s a ton/día (Gray & Simões, 2008).",
-                   style={"fontSize": "14px", "color": COLOR_MUTED, "lineHeight": "1.7"}),
+        ]),
+        html.Div(style={**CARD}, children=[
+            section_title("SSC derivado de TSS y Caudal"),
+            html.Div("SSC [mg/l] = TSS / Q ",
+                     style={"fontFamily": "monospace", "fontSize": "15px",
+                            "backgroundColor": f"{COLOR_ACCENT}10", "border": f"1px solid {COLOR_ACCENT}30",
+                            "borderRadius": "6px", "padding": "14px 20px", "color": COLOR_TEXT, "marginBottom": "12px"}),
         ]),
     ])
 
@@ -682,13 +688,13 @@ def tab_conclusiones():
                 ])
                 for n, t, d in [
                     ("01","Dataset final de calibración",
-                     "El proceso de control de calidad consolidó 30 observaciones con R² 0.70–0.76 en km 0, 17, 18 y 19."),
+                     "El proceso de control de calidad consolidó entre 27 y 39 observaciones con R² 0.58–0.73 en km 0, 1, 3, 14, 17, 18 y 19. Aunque podrian ser mas si finalmente los puntos de Calamar ofrecen resultados favorables."),
                     ("02","Bandas más informativas",
-                     "Las bandas Red y NIR mostraron las correlaciones más altas con CSS, consistente con la física de retrodispersión."),
-                    ("03","Desacoplamiento Q/CSS en zona estuarina",
-                     "La ausencia de correlación (R²=0.01) en km 19 evidencia la influencia de la marea como forzante dominante."),
-                    ("04","Perspectivas de modelado",
-                     "Con 30 puntos el dataset es apto para regresión potencial log-log y regresión múltiple, validadas con LOOCV."),
+                     "Las bandas Red, NIR y rojo 3 mostraron las correlaciones más altas con SSC, consistente con la literatura."),
+                    ("03","Perspectivas de modelado",
+                     "Con 30 puntos el dataset es apto para regresión potencial log-log y regresión múltiple, validadas con LOOCV. De ampliarse podria aplicarse algoritmos de machine learning como Random Forest."),
+                    ("05", "Limitaciones",
+                     "Un modelo de este tipo busca ofrecer una alternativa ante la falta importante de datos in situ, pero su desarrollo esta tambien limitado por esta problematica")
                 ]
             ]),
         ]),
@@ -696,10 +702,10 @@ def tab_conclusiones():
             section_title("Referencias"),
             html.Ul([html.Li(r, style={"fontSize": "13.5px", "color": COLOR_TEXT,
                                         "marginBottom": "8px", "lineHeight": "1.6"})
-                     for r in ["Vanoni, V.A. (Ed.) (1975). Sedimentation Engineering. ASCE Manual 54.",
-                               "Gray, J.R. & Simões, F.J.M. (2008). Estimating Sediment Discharge. ASCE.",
-                               "Drusch, M. et al. (2012). Sentinel-2: ESA's Optical High-Resolution Mission. RSE, 120, 25–36.",
-                               "Nechad, B. et al. (2010). Calibration of a generic algorithm for TSS mapping. RSE, 114(4), 854–866."]],
+                     for r in ["Qiu, Z., Liu, D., Duan, M., Chen, P., Yang, C., Li, K., & Duan, H. (2024). Four-decades of sediment transport variations in the Yellow River on the Loess Plateau using Landsat imagery. Remote Sensing of Environment, 306. https://doi.org/10.1016/j.rse.2024.114147",
+                               "Qiu, Z., Liu, D., Yan, N., Yang, C., Chen, P., Zhang, C., & Duan, H. (2024). Improving the observations of suspended sediment concentrations in rivers from Landsat to Sentinel-2 imagery. International Journal of Applied Earth Observation and Geoinformation, 134. https://doi.org/10.1016/j.jag.2024.104209",
+                               "Restrepo, J. D., Zapata, P., Díaz, J. M., Garzón-Ferreira, J., & García, C. B. (2006). Fluvial fluxes into the Caribbean Sea and their impact on coastal ecosystems: The Magdalena River, Colombia. Global and Planetary Change, 50(1–2), 33–49. https://doi.org/10.1016/j.gloplacha.2005.09.002",
+                               "Yepez, S., Laraque, A., Martinez, J. M., De Sa, J., Carrera, J. M., Castellanos, B., Gallay, M., & Lopez, J. L. (2018). Retrieval of suspended sediment concentrations using Landsat-8 OLI satellite images in the Orinoco River (Venezuela). Comptes Rendus - Geoscience, 350(1–2), 20–30. https://doi.org/10.1016/j.crte.2017.08.004"]],
                     style={"paddingLeft": "18px"}),
         ]),
     ])
@@ -1040,8 +1046,11 @@ def update_hydro(subtab, year_range):
         Qf   = filter_df(Q_cal)
         TSSf = filter_df(TSS_cal)
         QGf  = filter_df(Q_baq)
-        fig  = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.08,
-                             subplot_titles=["Caudal (m³/s)", "TSS Calamar (Kt/día)"])
+        merged = Qf.merge(TSSf, on="Fecha", how="inner").dropna(subset=["Q_calamar","TSS_calamar"])
+        merged ['ssc_derived'] = ((merged["TSS_calamar"]*(1000000/86400)) / merged["Q_calamar"])*(1000000/1000)  # mg/L
+        
+        fig  = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.08,
+                             subplot_titles=["Caudal (m³/s)", "TSS Calamar (Kt/día)", "SSC Derivado (mg/L)"])
         if not Qf.empty:
             fig.add_trace(go.Scatter(x=Qf["Fecha"], y=Qf["Q_calamar"], mode="lines",
                                      name="Q Calamar", line=dict(color=COLOR_ACCENT, width=1.5)), row=1,col=1)
@@ -1052,6 +1061,9 @@ def update_hydro(subtab, year_range):
         if not TSSf.empty:
             fig.add_trace(go.Scatter(x=TSSf["Fecha"], y=TSSf["TSS_calamar"], mode="lines",
                                      name="TSS Calamar", line=dict(color="#c0392b", width=1.5)), row=2,col=1)
+        if not merged.empty:
+            fig.add_trace(go.Scatter(x=merged["Fecha"], y=merged["ssc_derived"], mode="lines",
+                                     name="SSC Derivado", line=dict(color="#4bb929", width=1.5)), row=3,col=1)
         fig.update_layout(height=520, paper_bgcolor=COLOR_CARD, plot_bgcolor=COLOR_BG,
                           font=dict(family=FONT_BODY, size=12, color=COLOR_TEXT),
                           legend=dict(orientation="h", y=-0.08),
@@ -1065,6 +1077,7 @@ def update_hydro(subtab, year_range):
             ("Q Calamar",      Qf["Q_calamar"]       if not Qf.empty   else pd.Series(dtype=float), "m³/s"),
             ("TSS Calamar",    TSSf["TSS_calamar"]    if not TSSf.empty else pd.Series(dtype=float), "Kt/día"),
             ("Q Barranquilla", QGf["Q_barranquilla"]  if not QGf.empty  else pd.Series(dtype=float), "m³/s"),
+            ("SSC Derivado",   merged["ssc_derived"] if not merged.empty else pd.Series(dtype=float), "mg/L"),
         ]:
             if ser.empty or ser.isna().all():
                 continue
