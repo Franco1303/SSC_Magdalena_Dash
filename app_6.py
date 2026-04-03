@@ -283,6 +283,16 @@ def tab_contexto():
     ))
     fig.update_layout(mapbox=dict(style="carto-positron", center=dict(lat=11.10, lon=-74.85), zoom=12),
                       margin=dict(l=0,r=0,t=0,b=0), height=500, paper_bgcolor=COLOR_CARD)
+    
+    fig2 = go.Figure(go.Scattermapbox(
+        lat = [10.2422934],
+        lon = [-74.9138168],
+        mode="markers+lines", marker=dict(size=12, color=COLOR_ACCENT),
+        text=["Km 0 +250","Km 0 +500","Km 1", "Km 1 + 900","Km 3 +500","Km 5 +500", "Km 7 +900", "Km 11 +200","Km 14 +800", "Km 17 +600", "Km 18 + 200", "Km 19 +800", "Km 19 +940"], hoverinfo="text",
+    ))
+    fig2.update_layout(mapbox=dict(style="carto-positron", center=dict(lat=10.2422934, lon=-74.9138168), zoom=8.5),
+                      margin=dict(l=0,r=0,t=0,b=0), height=500, paper_bgcolor=COLOR_CARD)
+    
     return html.Div([
         html.Div(style={**CARD}, children=[
             section_title("Área de estudio", "Tramo estuarino del río Magdalena, Barranquilla, Colombia"),
@@ -303,6 +313,10 @@ def tab_contexto():
         ]),
         html.Div(style={**CARD}, children=[
             section_title("Estaciones de muestreo"),
+            html.P("las estaciones del kilometro 5 y 7 fueron descartadas del analisis final por estar fuertemente afectadas por actividades de dragado "
+                   "que introducen una mayor incertidumbre sobre su uso para entrenar el modelo. Las estaciones 0, 1 y 3 tambien introducen este tipo de ruido en menor medida.",
+                   style={"fontSize": "14.5px", "color": COLOR_TEXT, "lineHeight": "1.8",
+                          "maxWidth": "820px", "marginBottom": "20px"}),
             html.Div(style={"display": "flex", "gap": "12px", "flexWrap": "wrap"}, children=[
                 html.Div([
                     html.Div(f"Km {km}", style={"fontWeight": "700",
@@ -312,6 +326,21 @@ def tab_contexto():
                            "borderTop": f"3px solid {KM_COLORS.get(km, COLOR_ACCENT)}"})
                 for km in sorted(df["km"].unique())
             ]),
+        ]),
+        
+         html.Div(style={**CARD}, children=[
+            section_title("Calamar", "Estación de monitoreo del Instituto de Hidrología, Meteorología y Estudios Ambientales (IDEAM)"),
+            html.P("La estación de monitoreo hidrologico del IDEAM ubicada a unos 100 Km de Barranquilla en calamar es una fuente de datos adicionales para el análisis "
+                   "propuesto en este trabajo. En esta no se mide directamente la SSC pero si varibales fuertemente relacionadas como el "
+                   "caudal (Q), y la Carga solida total (TSS) de las cuales puede derivarse una concentración equivalente de promedio diario "
+                   "e intengrada en sección (SSC = TSS / Q) que puede ser comparada con las mediciones de campo y estimaciones de Sentinel-2 para evaluar "
+                   "su posible uso como fuente de datos adicionales para la calibración del modelo.",
+                   style={"fontSize": "14.5px", "color": COLOR_TEXT, "lineHeight": "1.8",
+                          "maxWidth": "820px", "marginBottom": "20px"}),
+            html.P("A continuación se presenta la ubicación de esta estación",
+                   style={"fontSize": "14.5px", "color": COLOR_TEXT, "lineHeight": "1.8",
+                          "maxWidth": "820px", "marginBottom": "20px"}),
+            dcc.Graph(figure=fig2, config={"displayModeBar": False}),
         ]),
     ])
 
@@ -356,8 +385,9 @@ def tab_objetivo():
     return html.Div([
         html.Div(style={**CARD, "borderLeft": f"4px solid {COLOR_ACCENT}"}, children=[
             section_title("Objetivo general"),
-            html.P("Desarrollar un modelo empírico para la estimación de la CSS en el tramo estuarino "
-                   "del río Magdalena a partir de valores de reflectancia superficial de Sentinel-2.",
+            html.P("Estimar la concentración superficial de sedimento en suspensión (SSC) en el sector fluvial entre Calamar y Bocas de Ceniza (bajo río Magdalena) "
+                   "mediante un modelo empírico derivado de variables espectrales satelitales e información hidrosedimentológica in situ, orientado a caracterizar su "
+                   "variabilidad espaciotemporal.",
                    style={"fontSize": "15px", "color": COLOR_TEXT, "lineHeight": "1.8",
                           "maxWidth": "800px", "fontWeight": "600"}),
         ]),
@@ -374,10 +404,13 @@ def tab_objetivo():
                     html.P(t, style={"fontSize": "14.5px", "color": COLOR_TEXT, "lineHeight": "1.7", "margin": "0"}),
                 ])
                 for i, t in enumerate([
-                    "Recopilar y procesar mediciones in situ de CSS con LISST aplicando criterios de control de calidad.",
-                    "Descargar y procesar imágenes Sentinel-2 mediante GEE extrayendo reflectancia en sitios de muestreo.",
-                    "Evaluar la relación entre bandas/índices de Sentinel-2 y CSS mediante análisis de correlación.",
-                    "Calibrar y validar un modelo de estimación de CSS evaluando su desempeño con R², RMSE y MAPE.",
+                    "Caracterizar la respuesta espectral del agua asociada a diferentes concentraciones de sedimento en suspensión, "
+                    "utilizando bandas del visible, NIR y SWIR (e índices espectrales derivados), en el sector fluvial entre Calamar y "
+                    "Bocas de Ceniza (bajo río Magdalena).",
+                    "Calibrar y validar un modelo empírico de estimación de SSC a partir de variables espectrales satelitales, "
+                    "empleando información hidrosedimentológica in situ para el sector fluvial entre Calamar y Bocas de Ceniza (bajo río Magdalena).",
+                    "Cuantificar la variabilidad espaciotemporal de la SSC superficial en el sector fluvial entre Calamar y Bocas de Ceniza, a partir "
+                    "de la serie satelital estimada, incluyendo estacionalidad, eventos extremos y tendencias.",
                 ])
             ]),
         ]),
