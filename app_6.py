@@ -7,7 +7,7 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from scipy.stats import pearsonr
-
+import io 
 # ─────────────────────────────────────────
 # DATOS
 # ─────────────────────────────────────────
@@ -741,7 +741,7 @@ def update_store(kms_sel):
 def update_stats(data):
     if not data:
         return []
-    dff = pd.read_json(data, orient="split")
+    dff = pd.read_json(io.StringIO(data), orient="split")
     cols = ["SSC"] + BANDAS + INDICES
     cols = [c for c in cols if c in dff.columns]
     stats = dff[cols].describe().T[["mean", "std", "min", "50%", "max"]].round(4)
@@ -770,7 +770,7 @@ def update_stats(data):
               Input("dist-variable","value"), Input("store-df-filtered","data"))
 def update_dist(var, data):
     if not data: return go.Figure()
-    dff = pd.read_json(data, orient="split")
+    dff = pd.read_json(io.StringIO(data), orient="split")
     if var not in dff.columns: return go.Figure()
     fig = make_subplots(rows=1, cols=2, subplot_titles=("Histograma por Km","Boxplot por Km"))
     for km in sorted(dff["km"].unique()):
@@ -789,7 +789,7 @@ def update_dist(var, data):
               Input("ts-variable","value"), Input("store-df-filtered","data"))
 def update_ts(var, data):
     if not data: return go.Figure()
-    dff = pd.read_json(data, orient="split")
+    dff = pd.read_json(io.StringIO(data), orient="split")
     dff["reflectance_date"] = pd.to_datetime(dff["reflectance_date"])
     if var not in dff.columns: return go.Figure()
     fig = go.Figure()
@@ -812,7 +812,7 @@ def update_ts(var, data):
               
 def update_scatter(x_var, transform, color_by, data, y_var):
     if not data: return go.Figure(), ""
-    dff = pd.read_json(data, orient="split")
+    dff = pd.read_json(io.StringIO(data), orient="split")
     if x_var not in dff.columns or y_var not in dff.columns: return go.Figure(), ""
     x = dff[x_var]; y = np.log(dff[y_var]) if transform=="log" else dff[y_var]
     y_label = "ln(CSS)" if transform=="log" else "CSS (mg/L)"
@@ -854,7 +854,7 @@ def update_scatter(x_var, transform, color_by, data, y_var):
               Input("store-df-filtered","data"), State("spec-km","value"))
 def update_spec_km_options(data, current_val):
     if not data: return [{"label":"Todas","value":"all"}], "all"
-    dff = pd.read_json(data, orient="split")
+    dff = pd.read_json(io.StringIO(data), orient="split")
     kms = sorted(dff["km"].unique())
     opts = [{"label":"Todas","value":"all"}] + [{"label":f"Km {k}","value":k} for k in kms]
     val = current_val if (current_val=="all" or current_val in kms) else "all"
@@ -866,7 +866,7 @@ def update_spec_km_options(data, current_val):
               Input("spec-km","value"), Input("store-df-filtered","data"))
 def update_spec(km_sel, data):
     if not data: return go.Figure()
-    dff = pd.read_json(data, orient="split")
+    dff = pd.read_json(io.StringIO(data), orient="split")
     BAND_NAMES = ["aerosol","blue","green","red","rojo 1","rojo 2","rojo 3","NIR","rojo 4","SWIR1","SWIR2"]
     WL_REAL    = [443.9,496.6,560,664.5,703.9,740.2,782.5,835.1,864.8,1613.7,2202.4]
     SWIR1_real=(1550,1700); SWIR2_real=(2140,2290); S1_fict=(0,150); S2_fict=(170,320)
@@ -932,7 +932,7 @@ def update_spec(km_sel, data):
               Input("corr-transform","value"), Input("store-df-filtered","data"))
 def update_corr(transform, data):
     if not data: return go.Figure()
-    dff = pd.read_json(data, orient="split")
+    dff = pd.read_json(io.StringIO(data), orient="split")
     cols = BANDAS + INDICES + ["SSC"]
     cols = [c for c in cols if c in dff.columns]
     data_c = dff[cols].copy()
@@ -1285,7 +1285,7 @@ def update_hydro(subtab, year_range):
               Input("store-df-filtered","data"))
 def update_corrbar(transform, data):
     if not data: return go.Figure()
-    dff = pd.read_json(data, orient="split")
+    dff = pd.read_json(io.StringIO(data), orient="split")
     cols = BANDAS + INDICES
     cols = [c for c in cols if c in dff.columns]
     if "SSC" not in dff.columns: return go.Figure()
@@ -1353,7 +1353,7 @@ def update_corrbar(transform, data):
               Input("store-df-filtered","data"))
 def update_heatmap(var, data):
     if not data: return go.Figure()
-    dff = pd.read_json(data, orient="split")
+    dff = pd.read_json(io.StringIO(data), orient="split")
     dff["reflectance_date"] = pd.to_datetime(dff["reflectance_date"])
     if var not in dff.columns: return go.Figure()
 
@@ -1397,7 +1397,7 @@ def update_heatmap(var, data):
               Input("store-df-filtered","data"))
 def update_climo(data):
     if not data: return go.Figure()
-    dff = pd.read_json(data, orient="split")
+    dff = pd.read_json(io.StringIO(data), orient="split")
     dff["reflectance_date"] = pd.to_datetime(dff["reflectance_date"])
     if "SSC" not in dff.columns: return go.Figure()
 
