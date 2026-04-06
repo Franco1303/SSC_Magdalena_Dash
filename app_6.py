@@ -12,6 +12,7 @@ from scipy.stats import pearsonr
 # DATOS
 # ─────────────────────────────────────────
 df = pd.read_csv("puntos_finales2.csv")
+#df = pd.read_csv("puntos_unificados.csv", sep=";")
 df["reflectance_date"] = pd.to_datetime(df["reflectance_date"])
 df["scc_date"]         = pd.to_datetime(df["scc_date"])
 df["km_label"]         = "Km " + df["km"].astype(str)
@@ -34,9 +35,9 @@ KM_COLORS = {
 #Caudal y TSS de calamar y campo 
 #-------------------------------------------
 
-Q= pd.read_csv(r"C:\Users\fco98\OneDrive\Documentos\TDG\DATOS_FRANCISCO\Q_MEDIA_D@29037020.data", sep="|" )
-QG= pd.read_excel(r"C:\Users\fco98\OneDrive\Documentos\TDG\DATOS_FRANCISCO\caudal_ganara.xlsx")
-tss= pd.read_csv(r"C:\Users\fco98\OneDrive\Documentos\TDG\DATOS_FRANCISCO\TR_KT_D_QS_D@29037020.data", sep="|" )
+Q= pd.read_csv(r"Q_MEDIA_D@29037020.data", sep="|" )
+QG= pd.read_excel(r"caudal_ganara.xlsx")
+tss= pd.read_csv(r"TR_KT_D_QS_D@29037020.data", sep="|" )
 
 Q['Fecha']= pd.to_datetime(Q['Fecha'],format="%Y-%m-%d %H:%M:%S")
 QG['Fecha']= pd.to_datetime(QG['Fecha'])
@@ -219,7 +220,7 @@ app.layout = html.Div(style={"backgroundColor": COLOR_BG, "minHeight": "100vh",
 ])
 
 # ═══════════════════════════════════════════
-# PESTAÑAS ESTÁTICAS
+# PESTAÑAS 
 # ═══════════════════════════════════════════
 
 def tab_intro():
@@ -693,7 +694,7 @@ def tab_conclusiones():
                      "Las bandas Red, NIR y rojo 3 mostraron las correlaciones más altas con SSC, consistente con la literatura."),
                     ("03","Perspectivas de modelado",
                      "Con 30 puntos el dataset es apto para regresión potencial log-log y regresión múltiple, validadas con LOOCV. De ampliarse podria aplicarse algoritmos de machine learning como Random Forest."),
-                    ("05", "Limitaciones",
+                    ("04", "Limitaciones",
                      "Un modelo de este tipo busca ofrecer una alternativa ante la falta importante de datos in situ, pero su desarrollo esta tambien limitado por esta problematica")
                 ]
             ]),
