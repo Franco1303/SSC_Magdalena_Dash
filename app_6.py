@@ -11,20 +11,24 @@ import io
 # ─────────────────────────────────────────
 # DATOS
 # ─────────────────────────────────────────
-df = pd.read_csv("puntos_finales2.csv")
+#df = pd.read_csv("puntos_finales2.csv")
 #df = pd.read_csv("puntos_unificados.csv", sep=";")
+df = pd.read_csv('puntos_alternativos.csv')
 df["reflectance_date"] = pd.to_datetime(df["reflectance_date"])
 df["scc_date"]         = pd.to_datetime(df["scc_date"])
 df["km_label"]         = "Km " + df["km"].astype(str)
 
 BANDAS  = ["aerosol", "blue", "green", "red", "rojo 1", "rojo 2",
            "rojo 3", "NIR", "rojo 4", "SWIR1", "SWIR2"]
-INDICES = ["RANS", "VNES", "NDTI"]
+INDICES = ["RANS", "VNES", "NDTI", "NIR/RED"]
 SSCS =["SSC", "SSC2", "SSC4"]
 KMS_ALL = sorted(df["km"].unique().tolist())
 
 KM_COLORS = {
     0:  "#1a6b9a",
+    1:  "#c5e71c",
+    3: "#1aff00",
+    14: "#6a00ed",
     11: "#2eaa6b",
     17: "#e07b2a",
     18: "#c0392b",
@@ -235,12 +239,12 @@ def tab_intro():
             html.P("Este Dash presenta un resumen general de mi tesis de pregrado de Geología en la Universidad del Norte,"
                    "que se enfoca en el desarrollo de un modelo empirico para estimar la concentración de sedimentos en suspensión (SSC) "
                    "en el tramo final del rio Magdalena a partir de reflectancia superficial del agua obtenida a partir de imagenes satelitales Sentinel 2 del programa Copernicus de "
-                   "la Agencia Espacial Europea (ESA). Para llevar a cabo este estudio es necesario el uso de mediciones in situ de SSC que deben ser unidas con la reflectancia"
+                   "la Agencia Espacial Europea (ESA). Para llevar a cabo este estudio es necesario el uso de mediciones in situ de SSC que deben ser unidas con la reflectancia "
                    "reportada por imagenes satelitales contemporaneas. El dataset final con el que se realizara el modelo esta compuesto entonces por aquellos puntos de las campañas de campo "
                    "para los cuales fue posible obtener reflectancia de Sentinel-2 aplicando criterios de control de calidad rigurosos. ",
                    style={"fontSize": "15px", "color": COLOR_TEXT, "lineHeight": "1.8",
                           "maxWidth": "820px", "marginBottom": "28px"}),
-            html.P("Los datos de campo fueron tomados con un perfilador LISST (laser in situ scattering and transmissometer), que permite obtener perfiles verticales de SSC. Estos fueron tomados cada dos semanas en el periodo Junio 2025 - Marzo 2026"
+            html.P("Los datos de campo fueron tomados con un perfilador LISST (laser in situ scattering and transmissometer), que permite obtener perfiles verticales de SSC. Estos fueron tomados cada dos semanas en el periodo Junio 2025 - Marzo 2026 "
                    "y a continuación se presentan los puntos finales que pudieron ser unidos con reflectancia de Sentinel-2 en un intervalo de tolerancia de 1 dia de diferencia entre la medición in situ y captura de la imagen.",
                    style={"fontSize": "15px", "color": COLOR_TEXT, "lineHeight": "1.8",
                           "maxWidth": "820px", "marginBottom": "28px"}),
@@ -289,7 +293,7 @@ def tab_contexto():
         lat = [10.2422934],
         lon = [-74.9138168],
         mode="markers+lines", marker=dict(size=12, color=COLOR_ACCENT),
-        text=["Km 0 +250","Km 0 +500","Km 1", "Km 1 + 900","Km 3 +500","Km 5 +500", "Km 7 +900", "Km 11 +200","Km 14 +800", "Km 17 +600", "Km 18 + 200", "Km 19 +800", "Km 19 +940"], hoverinfo="text",
+        text=["Calamar, IDEAM (20037020)"], hoverinfo="text",
     ))
     fig2.update_layout(mapbox=dict(style="carto-positron", center=dict(lat=10.2422934, lon=-74.9138168), zoom=8.5),
                       margin=dict(l=0,r=0,t=0,b=0), height=500, paper_bgcolor=COLOR_CARD)
@@ -338,7 +342,7 @@ def tab_contexto():
                    "su posible uso como fuente de datos adicionales para la calibración del modelo.",
                    style={"fontSize": "14.5px", "color": COLOR_TEXT, "lineHeight": "1.8",
                           "maxWidth": "820px", "marginBottom": "20px"}),
-            html.P("A continuación se presenta la ubicación de esta estación",
+            html.P("A continuación se presenta la ubicación de esta estación:",
                    style={"fontSize": "14.5px", "color": COLOR_TEXT, "lineHeight": "1.8",
                           "maxWidth": "820px", "marginBottom": "20px"}),
             dcc.Graph(figure=fig2, config={"displayModeBar": False}),
@@ -481,8 +485,9 @@ def tab_eda():
     return html.Div([
 
         # ── FILTRO GENERAL (sticky) ──
-        html.Div(style={**CARD, "borderLeft": f"4px solid {COLOR_ACCENT}",
-                         "top": "0", "zIndex": "100", "padding": "20px 32px"}, children=[
+        html.Div(id = "filter.card", style={**CARD,"borderLeft": f"4px solid {COLOR_ACCENT}", "position": "sticky",
+                         "top": "0", "zIndex": "100", "padding": "20px 32px", "transition": "padding 0.25s ease, box-shadow 0.25s ease",
+        "borderBottom": "1px solid #eee",}, children=[
             section_title("Filtro global por estación",
                           "Selecciona las estaciones por kilómetros que deseas incluir en todo el análisis exploratorio, aquellas entre el Km 1 al 11 pueden introducir ruido por dragados y cambios rapidos en las condiciones hidrodinamicas afectando negativamente las correlaciones"),
             html.Div(style={"display": "flex", "alignItems": "center", "gap": "16px", "flexWrap": "wrap"}, children=[
@@ -515,7 +520,7 @@ def tab_eda():
             html.Div(style={"display": "flex", "gap": "16px", "marginBottom": "16px",
                             "alignItems": "center", "flexWrap": "wrap"}, children=[
                 html.Label("Fecha:", style={"fontSize": "13px", "color": COLOR_MUTED, "fontWeight": "600"}),
-                dcc.Dropdown(id="profile-fecha", options=[], placeholder="Selecciona una fecha",
+                dcc.Dropdown(id="profile-fecha", options=[], value = "11/06/2025", placeholder="Selecciona una fecha",
                              clearable=False, style={"width": "180px", "fontSize": "13px"}),
                 html.Label("Km:", style={"fontSize": "13px", "color": COLOR_MUTED, "fontWeight": "600", "marginLeft": "8px"}),
                 dcc.Dropdown(id="profile-km", options=[], placeholder="Km",
@@ -574,13 +579,30 @@ def tab_eda():
                 html.Label("Color por:", style={"fontSize": "13px", "color": COLOR_MUTED,
                                                  "fontWeight": "600", "marginLeft": "16px"}),
                 dcc.RadioItems(id="scatter-color",
-                               options=[{"label": " Km", "value": "km"},{"label": " Ninguno", "value": "none"}],
+                               options=[{"label": " Km", "value": "km"},{"label": " CSS", "value": "CSS"}, {"label": " Ninguno", "value": "none"}],
                                value="km", inline=True, style={"fontSize": "13px"}),
+                html.Label("Ajuste:", style={"fontSize": "13px", "color": COLOR_MUTED,
+                                                 "fontWeight": "600", "marginLeft": "16px"}),
+                dcc.RadioItems(id="scatter-ajuste",
+                               options=[{"label": "Lineal", "value": "lineal"},{"label": "Potencial", "value": "potencial"}],
+                               value="lineal", inline=True, style={"fontSize": "13px"}),
             ]),
             dcc.Graph(id="scatter-plot", config={"displayModeBar": False}),
             html.Div(id="scatter-stats", style={"marginTop": "8px"}),
         ]),
-
+                # ── Ranking de correlaciones ──
+        html.Div(style={**CARD}, children=[
+            section_title("Ranking de correlaciones con CSS",
+                          "Correlación de Pearson entre cada banda/índice y CSS, ordenado por valor absoluto"),
+            html.Div(style={"display": "flex", "gap": "16px", "marginBottom": "16px", "alignItems": "center"}, children=[
+                html.Label("Transformación CSS:", style={"fontSize": "13px", "color": COLOR_MUTED, "fontWeight": "600"}),
+                dcc.RadioItems(id="corrbar-transform",
+                               options=[{"label": " CSS", "value": "linear"},{"label": " ln(CSS)", "value": "log"}],
+                               value="log", inline=True, style={"fontSize": "13px"}),
+            ]),
+            dcc.Graph(id="corrbar-plot", config={"displayModeBar": False}),
+        ]),
+        
         # ── Firmas espectrales ──
         html.Div(style={**CARD}, children=[
             section_title("Firmas espectrales", "Reflectancia por banda para cada observación, coloreada por CSS"),
@@ -639,18 +661,7 @@ def tab_eda():
             dcc.Graph(id="corr-plot", config={"displayModeBar": False}),
         ]),
         
-                # ── Ranking de correlaciones ──
-        html.Div(style={**CARD}, children=[
-            section_title("Ranking de correlaciones con CSS",
-                          "Correlación de Pearson entre cada banda/índice y CSS, ordenado por valor absoluto"),
-            html.Div(style={"display": "flex", "gap": "16px", "marginBottom": "16px", "alignItems": "center"}, children=[
-                html.Label("Transformación CSS:", style={"fontSize": "13px", "color": COLOR_MUTED, "fontWeight": "600"}),
-                dcc.RadioItems(id="corrbar-transform",
-                               options=[{"label": " CSS", "value": "linear"},{"label": " ln(CSS)", "value": "log"}],
-                               value="log", inline=True, style={"fontSize": "13px"}),
-            ]),
-            dcc.Graph(id="corrbar-plot", config={"displayModeBar": False}),
-        ]),
+
 
         # ── Mapa de calor espacio-temporal ──
         html.Div(style={**CARD}, children=[
@@ -808,27 +819,77 @@ def update_ts(var, data):
 # ── Scatter ──
 @app.callback(Output("scatter-plot","figure"), Output("scatter-stats","children"),
               Input("scatter-x","value"), Input("scatter-transform","value"),
-              Input("scatter-color","value"), Input("store-df-filtered","data"), Input("scatter-y","value"))
+              Input("scatter-color","value"), Input("store-df-filtered","data"), Input("scatter-y","value"),
+              Input("scatter-ajuste", "value"))
               
-def update_scatter(x_var, transform, color_by, data, y_var):
+def update_scatter(x_var, transform, color_by, data, y_var, ajuste):
     if not data: return go.Figure(), ""
     dff = pd.read_json(io.StringIO(data), orient="split")
     if x_var not in dff.columns or y_var not in dff.columns: return go.Figure(), ""
-    x = dff[x_var]; y = np.log(dff[y_var]) if transform=="log" else dff[y_var]
-    y_label = "ln(CSS)" if transform=="log" else "CSS (mg/L)"
-    r, p = pearsonr(x, y); r2 = r**2
-    m, b = np.polyfit(x, y, 1); x_line = np.linspace(x.min(), x.max(), 200)
+    x = dff[x_var]
+    y_raw = dff[y_var]
+
+    # Transformación seleccionada por el usuario
+    y = np.log(y_raw) if transform == "log" else y_raw
+    y_label = "ln(CSS)" if transform == "log" else "CSS (mg/L)"
+
     fig = go.Figure()
+    
+    if ajuste == "lineal":
+        r, p = pearsonr(x, y); r2 = r**2
+        m, b = np.polyfit(x, y, 1); x_line = np.linspace(x.min(), x.max(), 200)
+        y_line = m * x_line + b
+        eq_text = f"y = {m:.4f}x + {b:.4f}"
+
+    elif ajuste == "potencial":
+        
+        mask = (x > 0) & (y_raw > 0)
+        x_fit = x[mask]
+        y_fit = y_raw[mask]
+
+        logx = np.log(x_fit)
+        logy = np.log(y_fit)
+
+        r, p = pearsonr(logx, logy)
+        r2 = r**2
+
+        b_exp, loga = np.polyfit(logx, logy, 1)
+        a = np.exp(loga)
+
+        x_line = np.linspace(x_fit.min(), x_fit.max(), 200)
+        y_line = a * (x_line ** b_exp)
+
+        # si estás en modo log, graficar log(y)
+        if transform == "log":
+            y_line = np.log(y_line)
+
+        eq_text = f"y = {a:.4f}x^{b_exp:.4f}"
     if color_by == "km":
         for km in sorted(dff["km"].unique()):
             sub = dff[dff["km"]==km]; y_sub = np.log(sub["SSC"]) if transform=="log" else sub["SSC"]
             fig.add_trace(go.Scatter(x=sub[x_var], y=y_sub, mode="markers", name=f"Km {km}",
                                      marker=dict(size=9, color=KM_COLORS.get(km,COLOR_ACCENT),
                                                  line=dict(width=1,color="white"))))
+    elif color_by == "CSS":
+        fig.add_trace(go.Scatter(
+            x=x,
+            y=y,
+            mode="markers",
+            name="Datos",
+            marker=dict(
+                size=9,
+                color=dff[y_var],
+                colorscale="Inferno",
+                colorbar=dict(title="CSS"),
+                showscale=True,
+                line=dict(width=1, color="white")
+            )
+        ))
+        
     else:
         fig.add_trace(go.Scatter(x=x, y=y, mode="markers", name="Datos",
                                  marker=dict(size=9,color=COLOR_ACCENT,line=dict(width=1,color="white"))))
-    fig.add_trace(go.Scatter(x=x_line, y=m*x_line+b, mode="lines", name="Regresión",
+    fig.add_trace(go.Scatter(x=x_line, y=y_line, mode="lines", name="Regresión",
                              line=dict(color="#c0392b",width=2,dash="dash")))
     fig.update_layout(height=400, paper_bgcolor=COLOR_CARD, plot_bgcolor=COLOR_BG,
                       font=dict(family=FONT_BODY,size=12,color=COLOR_TEXT),
@@ -837,7 +898,7 @@ def update_scatter(x_var, transform, color_by, data, y_var):
     fig.update_xaxes(showgrid=False); fig.update_yaxes(gridcolor=COLOR_BORDER)
     p_text = "< 0.0001" if p<0.0001 else f"{p:.4f}"
     stats_div = html.Div(style={"display":"flex","gap":"24px","flexWrap":"wrap","marginTop":"8px"}, children=[
-        html.Span(f"y = {m:.4f}x + {b:.4f}", style={"fontFamily":"monospace","fontSize":"13px","color":COLOR_TEXT,
+        html.Span(eq_text, style={"fontFamily":"monospace","fontSize":"13px","color":COLOR_TEXT,
                    "backgroundColor":f"{COLOR_ACCENT}10","padding":"4px 10px","borderRadius":"4px"}),
         html.Span(f"R² = {r2:.3f}", style={"fontFamily":"monospace","fontSize":"13px","color":COLOR_ACCENT,
                    "fontWeight":"700","padding":"4px 10px","borderRadius":"4px","backgroundColor":f"{COLOR_ACCENT}10"}),
@@ -1461,6 +1522,43 @@ def update_climo(data):
         boxmode="overlay",
     )
     return fig
+
+# Callback — solo JS, sin CSS externo
+app.clientside_callback(
+    """
+    function() {
+        const card = document.getElementById('filter-card');
+        const subtitle = card.querySelector('p:first-child');  // ajusta al selector de tu section_title
+        if (!card) return '';
+
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 10) {
+                card.style.padding = '10px 32px';
+                card.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)';
+                if (subtitle) {
+                    subtitle.style.maxHeight = '0';
+                    subtitle.style.opacity = '0';
+                    subtitle.style.overflow = 'hidden';
+                    subtitle.style.transition = 'max-height 0.25s ease, opacity 0.2s ease';
+                    subtitle.style.marginBottom = '0';
+                }
+            } else {
+                card.style.padding = '20px 32px';
+                card.style.boxShadow = 'none';
+                if (subtitle) {
+                    subtitle.style.maxHeight = '60px';
+                    subtitle.style.opacity = '1';
+                    subtitle.style.marginBottom = '';
+                }
+            }
+        }, { passive: true });
+
+        return '';
+    }
+    """,
+    Output("filter-card", "data-scroll"),
+    Input("filter-card", "id"),
+)
 
 if __name__ == "__main__":
     app.run(debug=True)
