@@ -9,6 +9,9 @@ from plotly.subplots import make_subplots
 from scipy.stats import pearsonr
 import io 
 from dash import ctx
+
+
+
 # ─────────────────────────────────────────
 # DATOS
 # ─────────────────────────────────────────
@@ -183,6 +186,8 @@ app = dash.Dash(
     suppress_callback_exceptions=True,
 )
 app.title = "CSS Magdalena — EDA"
+
+server = app.server
 
 app.layout = html.Div(style={"backgroundColor": COLOR_BG, "minHeight": "100vh",
                                "fontFamily": FONT_BODY}, children=[
