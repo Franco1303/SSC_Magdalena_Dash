@@ -6,3 +6,5 @@ scipy>=1.11.0
 openpyxl>=3.1.0
 datetime
 pathlib
+io 
+gunicorn

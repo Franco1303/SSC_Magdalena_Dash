@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from scipy.stats import pearsonr
 import io 
+from dash import ctx
 # ─────────────────────────────────────────
 # DATOS
 # ─────────────────────────────────────────
@@ -508,10 +509,41 @@ def tab_eda():
         ]),
 
         # ── Estadísticas descriptivas ──
-        html.Div(style={**CARD}, children=[
-            section_title("Estadísticas descriptivas", "Resumen del subconjunto seleccionado"),
-            html.Div(id="stats-table"),
+        # ── Layout ──
+html.Div(style={**CARD}, children=[
+    section_title("Estadísticas descriptivas", "Resumen del subconjunto seleccionado"),
+
+    html.Div(style={"display": "flex", "alignItems": "center", "gap": "12px",
+                    "marginBottom": "16px", "flexWrap": "wrap"}, children=[
+
+        # Pills grupo
+        html.Div(id="group-pills", style={"display": "flex", "gap": "8px"}, children=[
+            html.Button("Bandas",  id="pill-bandas",  n_clicks=0,
+                        style={"fontSize":"11px","padding":"3px 10px","borderRadius":"6px",
+                               "border":"0.5px solid","cursor":"pointer"}),
+            html.Button("Índices", id="pill-indices", n_clicks=0,
+                        style={"fontSize":"11px","padding":"3px 10px","borderRadius":"6px",
+                               "border":"0.5px solid","cursor":"pointer"}),
+            html.Button("SSC",     id="pill-ssc",     n_clicks=0,
+                        style={"fontSize":"11px","padding":"3px 10px","borderRadius":"6px",
+                               "border":"0.5px solid","cursor":"pointer"}),
         ]),
+
+        # Dropdown variable
+        dcc.Dropdown(
+            id="stats-var-dropdown",
+            options=[{"label": v, "value": v} for v in BANDAS],
+            value=SSCS[0],
+            clearable=False,
+            style={"minWidth": "180px", "fontSize": "13px"},
+        ),
+    ]),
+
+    html.Div(id="stats-table"),
+]),
+
+# Store para grupo activo
+dcc.Store(id="stats-group", data="bandas"),
         
         # ── Perfiles de campo ──
         html.Div(style={**CARD}, children=[
@@ -520,7 +552,7 @@ def tab_eda():
             html.Div(style={"display": "flex", "gap": "16px", "marginBottom": "16px",
                             "alignItems": "center", "flexWrap": "wrap"}, children=[
                 html.Label("Fecha:", style={"fontSize": "13px", "color": COLOR_MUTED, "fontWeight": "600"}),
-                dcc.Dropdown(id="profile-fecha", options=[], value = "11/06/2025", placeholder="Selecciona una fecha",
+                dcc.Dropdown(id="profile-fecha", options=[], value = "11/06/2025",placeholder="Selecciona una fecha",
                              clearable=False, style={"width": "180px", "fontSize": "13px"}),
                 html.Label("Km:", style={"fontSize": "13px", "color": COLOR_MUTED, "fontWeight": "600", "marginLeft": "8px"}),
                 dcc.Dropdown(id="profile-km", options=[], placeholder="Km",
@@ -748,30 +780,71 @@ def update_store(kms_sel):
 
 
 # ── Estadísticas ──
-@app.callback(Output("stats-table", "children"), Input("store-df-filtered", "data"))
-def update_stats(data):
-    if not data:
+
+#Guardar grupo activo al hacer click en pill
+@app.callback(
+    Output("stats-group", "data"),
+    Input("pill-bandas",  "n_clicks"),
+    Input("pill-indices", "n_clicks"),
+    Input("pill-ssc",     "n_clicks"),
+    prevent_initial_call=True,
+)
+def set_group(b, i, s):
+    return ctx.triggered_id.replace("pill-", "")
+
+
+#Actualizar opciones del dropdown según grupo
+@app.callback(
+    Output("stats-var-dropdown", "options"),
+    Output("stats-var-dropdown", "value"),
+    Input("stats-group", "data"),
+)
+def update_dropdown(group):
+    mapping = {"bandas": BANDAS, "indices": INDICES, "ssc": SSCS}
+    vars_ = mapping[group]
+    opts  = [{"label": v, "value": v} for v in vars_]
+    return opts, vars_[0]
+
+
+#
+@app.callback(
+    Output("stats-table", "children"),
+    Input("stats-var-dropdown", "value"),
+    Input("store-df-filtered",  "data"),
+)
+def update_stats(variable, data):
+    if not data or not variable:
         return []
-    dff = pd.read_json(io.StringIO(data), orient="split")
-    cols = ["SSC"] + BANDAS + INDICES
-    cols = [c for c in cols if c in dff.columns]
-    stats = dff[cols].describe().T[["mean", "std", "min", "50%", "max"]].round(4)
-    stats.columns = ["Media", "Desv. Est.", "Mín.", "Mediana", "Máx."]
+    dff   = pd.read_json(io.StringIO(data), orient="split")
+    if variable not in dff.columns:
+        return html.P("Variable no disponible", style={"color": COLOR_MUTED, "fontSize": "13px"})
+
+    s = dff[variable].describe()
+    stats = {
+        "Media":     round(s["mean"], 4),
+        "Desv. Est.": round(s["std"],  4),
+        "Mín.":      round(s["min"],  4),
+        "Mediana":   round(dff[variable].median(), 4),
+        "Máx.":      round(s["max"],  4),
+    }
+
     return html.Table([
         html.Thead(html.Tr([
             html.Th("Variable", style={"textAlign":"left","padding":"8px 14px","fontSize":"12px",
                                        "color":COLOR_MUTED,"borderBottom":f"2px solid {COLOR_BORDER}"}),
-            *[html.Th(c, style={"textAlign":"right","padding":"8px 14px","fontSize":"12px",
-                                "color":COLOR_MUTED,"borderBottom":f"2px solid {COLOR_BORDER}"}) for c in stats.columns],
+            *[html.Th(k, style={"textAlign":"right","padding":"8px 14px","fontSize":"12px",
+                                "color":COLOR_MUTED,"borderBottom":f"2px solid {COLOR_BORDER}"})
+              for k in stats],
         ])),
         html.Tbody([
             html.Tr([
-                html.Td(idx, style={"padding":"7px 14px","fontSize":"13px","fontWeight":"600",
-                                    "color":COLOR_ACCENT,"borderBottom":f"1px solid {COLOR_BORDER}"}),
-                *[html.Td(f"{v:.4f}", style={"padding":"7px 14px","fontSize":"13px","textAlign":"right",
-                                              "borderBottom":f"1px solid {COLOR_BORDER}"}) for v in row]
-            ], style={"backgroundColor": COLOR_CARD if i%2==0 else f"{COLOR_ACCENT}05"})
-            for i, (idx, row) in enumerate(stats.iterrows())
+                html.Td(variable, style={"padding":"7px 14px","fontSize":"13px",
+                                         "fontWeight":"600","color":COLOR_ACCENT,
+                                         "borderBottom":f"1px solid {COLOR_BORDER}"}),
+                *[html.Td(str(v), style={"padding":"7px 14px","fontSize":"13px",
+                                          "textAlign":"right","borderBottom":f"1px solid {COLOR_BORDER}"})
+                  for v in stats.values()]
+            ])
         ])
     ], style={"width":"100%","borderCollapse":"collapse"})
     
