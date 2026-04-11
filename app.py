@@ -9,7 +9,7 @@ from plotly.subplots import make_subplots
 from scipy.stats import pearsonr
 import io 
 from dash import ctx
-
+from dash import ALL
 
 
 # ─────────────────────────────────────────
@@ -31,7 +31,7 @@ KMS_ALL = sorted(df["km"].unique().tolist())
 KM_COLORS = {
     0:  "#1a6b9a",
     1:  "#c5e71c",
-    3: "#1aff00",
+    3:  "#1aff00",
     14: "#6a00ed",
     11: "#2eaa6b",
     17: "#e07b2a",
@@ -201,7 +201,10 @@ app.layout = html.Div(style={"backgroundColor": COLOR_BG, "minHeight": "100vh",
         "padding": "0 48px", "display": "flex", "alignItems": "center",
         "gap": "16px", "height": "64px", "boxShadow": "0 1px 3px rgba(0,0,0,0.06)",
     }, children=[
-        html.Div("🌊", style={"fontSize": "24px"}),
+        html.Div([
+        html.Img(src="/assets/satelite.png", 
+                style={"width": "44px", "height": "44px"})
+        ], style={"display": "flex", "alignItems": "center"}),
         html.Div([
             html.Span("CSS Magdalena", style={"fontFamily": FONT_TITLE, "fontSize": "17px",
                                                "color": COLOR_TEXT, "fontWeight": "700"}),
@@ -279,8 +282,60 @@ def tab_intro():
                     ("EDA",          "Análisis exploratorio interactivo con filtro global por estación."),
                 ]
             ]),
+        # ── Contacto ──
+        html.Div(style={**CARD, "borderLeft": f"4px solid {COLOR_ACCENT}"}, children=[
+            section_title("Autor"),
+            html.Div(style={"display": "flex", "alignItems": "center", "gap": "24px",
+                            "flexWrap": "wrap"}, children=[
+
+                # Avatar iniciales
+                html.Div("FM", style={
+                    "width": "56px", "height": "56px", "borderRadius": "50%",
+                    "background": f"{COLOR_ACCENT}20", "color": COLOR_ACCENT,
+                    "display": "flex", "alignItems": "center", "justifyContent": "center",
+                    "fontSize": "18px", "fontWeight": "700", "flexShrink": "0",
+                }),
+
+                # Nombre y título
+                html.Div([
+                    html.P("Francisco Javier Morales Carroll",
+                           style={"fontSize": "16px", "fontWeight": "700",
+                                  "color": COLOR_TEXT, "margin": "0 0 2px"}),
+                    html.P("Estudiante de Geología · Universidad del Norte",
+                           style={"fontSize": "13px", "color": COLOR_MUTED, "margin": "0"}),
+                ]),
+
+                # Links
+                html.Div(style={"display": "flex", "gap": "10px", "flexWrap": "wrap",
+                                "marginLeft": "auto"}, children=[
+                    html.A("GitHub", href="https://github.com/Franco1303", target="_blank",
+                           style={"fontSize": "13px", "padding": "6px 14px",
+                                  "borderRadius": "6px", "border": f"0.5px solid {COLOR_BORDER}",
+                                  "color": COLOR_TEXT, "textDecoration": "none",
+                                  "background": COLOR_CARD}),
+                    html.A("LinkedIn", href="www.linkedin.com/in/francisco-morales-4715092a0", target="_blank",
+                           style={"fontSize": "13px", "padding": "6px 14px",
+                                  "borderRadius": "6px", "border": f"0.5px solid {COLOR_BORDER}",
+                                  "color": COLOR_TEXT, "textDecoration": "none",
+                                  "background": COLOR_CARD}),
+                    html.A("Correo", href="mailto:fcarroll@uninorte.edu.co", target="_blank",
+                           style={"fontSize": "13px", "padding": "6px 14px",
+                                  "borderRadius": "6px", "border": f"0.5px solid {COLOR_BORDER}",
+                                  "color": COLOR_TEXT, "textDecoration": "none",
+                                  "background": COLOR_CARD}),
+                    html.A("Universidad del Norte", href="https://www.uninorte.edu.co",
+                           target="_blank",
+                           style={"fontSize": "13px", "padding": "6px 14px",
+                                  "borderRadius": "6px",
+                                  "border": f"0.5px solid {COLOR_ACCENT}",
+                                  "color": COLOR_ACCENT, "textDecoration": "none",
+                                  "background": f"{COLOR_ACCENT}10"}),
+                ]),
+            ]),
         ]),
     ])
+        ]),
+
 
 
 def tab_contexto():
@@ -296,12 +351,12 @@ def tab_contexto():
                       margin=dict(l=0,r=0,t=0,b=0), height=500, paper_bgcolor=COLOR_CARD)
     
     fig2 = go.Figure(go.Scattermapbox(
-        lat = [10.2422934],
-        lon = [-74.9138168],
-        mode="markers+lines", marker=dict(size=12, color=COLOR_ACCENT),
-        text=["Calamar, IDEAM (20037020)"], hoverinfo="text",
+        lat = [10.2422934, 	10.30],
+        lon = [-74.9138168, -74.95],
+        mode="markers", marker=dict(size=12, color=COLOR_ACCENT),
+        text=["Calamar, IDEAM (20037020)", "INKORA K-7 (29037360)"], hoverinfo="text",
     ))
-    fig2.update_layout(mapbox=dict(style="carto-positron", center=dict(lat=10.2422934, lon=-74.9138168), zoom=8.5),
+    fig2.update_layout(mapbox=dict(style="carto-positron", center=dict(lat=10.2422934, lon=-74.9138168), zoom=9),
                       margin=dict(l=0,r=0,t=0,b=0), height=500, paper_bgcolor=COLOR_CARD)
     
     return html.Div([
@@ -345,7 +400,8 @@ def tab_contexto():
                    "propuesto en este trabajo. En esta no se mide directamente la SSC pero si varibales fuertemente relacionadas como el "
                    "caudal (Q), y la Carga solida total (TSS) de las cuales puede derivarse una concentración equivalente de promedio diario "
                    "e intengrada en sección (SSC = TSS / Q) que puede ser comparada con las mediciones de campo y estimaciones de Sentinel-2 para evaluar "
-                   "su posible uso como fuente de datos adicionales para la calibración del modelo.",
+                   "su posible uso como fuente de datos adicionales para la calibración del modelo. Por otro lado, parte del caudal de Calamar se pierde al "
+                   "salir por el canal del dique, por esto para evaluar este efecto se usaran caudales de la estación Inkora del Ideam que monitorea el caudal de este corredor fluvial.",
                    style={"fontSize": "14.5px", "color": COLOR_TEXT, "lineHeight": "1.8",
                           "maxWidth": "820px", "marginBottom": "20px"}),
             html.P("A continuación se presenta la ubicación de esta estación:",
@@ -433,57 +489,114 @@ def tab_marco():
         html.Div(style={**CARD}, children=[
             section_title("Teledetección de sedimentos en suspensión", "Fundamentos físicos y estado del arte"),
             html.P("La estimación de CSS mediante teledetección se basa en la relación entre la reflectancia "
-                   "espectral del agua y la concentración de partículas en suspensión. Los sedimentos aumentan "
-                   "la reflectancia en las bandas roja y NIR al incrementar la retrodispersión.",
-                   style={"fontSize": "14.5px", "color": COLOR_TEXT, "lineHeight": "1.8"}),
+                "espectral del agua y la concentración de partículas en suspensión. Los sedimentos aumentan "
+                "la reflectancia en las bandas roja y NIR al incrementar la retrodispersión.",
+                style={"fontSize": "14.5px", "color": COLOR_TEXT, "lineHeight": "1.8"}),
         ]),
+
         html.Div(style={"display": "grid", "gridTemplateColumns": "1fr 1fr", "gap": "20px"}, children=[
+
+            # ── Gráfica espectral ──
             html.Div(style={**CARD}, children=[
                 html.H4("Sentinel-2 MSI", style={"fontFamily": FONT_TITLE, "fontSize": "15px",
-                                                   "color": COLOR_TEXT, "marginBottom": "14px"}),
-                html.Table([
-                    html.Thead(html.Tr([html.Th(h, style={"textAlign": "left", "padding": "6px 12px",
-                               "fontSize": "12px", "color": COLOR_MUTED,
-                               "borderBottom": f"1px solid {COLOR_BORDER}"}) for h in ["Banda","λ central (nm)","Resolución"]])),
-                    html.Tbody([html.Tr([html.Td(v, style={"padding": "6px 12px", "fontSize": "13px"}) for v in row])
-                                for row in [("Blue (B2)","492","10 m"),("Green (B3)","560","10 m"),
-                                            ("Red (B4)","665","10 m"),("Red Edge 1 (B5)","704","20 m"),
-                                            ("NIR (B8)","833","10 m"),("SWIR1 (B11)","1614","20 m"),
-                                            ("SWIR2 (B12)","2202","20 m")]]),
-                ], style={"width": "100%", "borderCollapse": "collapse"}),
+                                                "color": COLOR_TEXT, "marginBottom": "4px"}),
+                html.P("Haz clic en una banda para ver detalles",
+                    style={"fontSize": "12px", "color": COLOR_MUTED, "marginBottom": "12px"}),
+
+                html.Div(style={"position": "relative", "width": "100%", "height": "160px"}, children=[
+                    html.Div(id="bands-overlay", style={"position": "absolute", "top": "0",
+                                                        "left": "0", "width": "100%", "height": "100%"}),
+                    # Etiquetas eje X
+                    html.Div(style={"position": "absolute", "bottom": "0", "left": "0",
+                                    "width": "100%", "height": "20px"}, children=[
+                        html.Span(str(nm), style={
+                            "position": "absolute",
+                            "left": f"{(nm - 400) / 2000 * 100}%",
+                            "transform": "translateX(-50%)",
+                            "fontSize": "10px", "color": COLOR_MUTED,
+                        }) for nm in [400, 600, 800, 1000, 1400, 1800, 2200]
+                    ]),
+                ]),
+
+                html.Div(id="band-info",
+                        style={"background": COLOR_BG, "borderRadius": "8px",
+                                "padding": "14px 18px", "marginTop": "12px",
+                                "border": f"0.5px solid {COLOR_BORDER}", "minHeight": "70px"},
+                        children=html.P("Selecciona una banda del espectro",
+                                        style={"fontSize": "13px", "color": COLOR_MUTED, "margin": "0"})),
             ]),
+
+            # ── Índices espectrales ──
             html.Div(style={**CARD}, children=[
                 html.H4("Índices espectrales evaluados",
-                        style={"fontFamily": FONT_TITLE, "fontSize": "15px", "color": COLOR_TEXT, "marginBottom": "14px"}),
+                        style={"fontFamily": FONT_TITLE, "fontSize": "15px",
+                            "color": COLOR_TEXT, "marginBottom": "14px"}),
                 html.Div([
                     html.Div([
-                        html.Div(n, style={"fontWeight": "700", "color": COLOR_ACCENT, "fontSize": "14px", "marginBottom": "4px"}),
-                        html.Div(f, style={"fontFamily": "monospace", "fontSize": "12px", "color": COLOR_MUTED, "marginBottom": "4px"}),
+                        html.Div(n, style={"fontWeight": "700", "color": COLOR_ACCENT,
+                                        "fontSize": "14px", "marginBottom": "4px"}),
+                        html.Div(f, style={"fontFamily": "monospace", "fontSize": "12px",
+                                        "color": COLOR_MUTED, "marginBottom": "4px"}),
                         html.Div(d, style={"fontSize": "13px", "color": COLOR_TEXT, "lineHeight": "1.5"}),
-                    ], style={"marginBottom": "16px", "paddingBottom": "16px", "borderBottom": f"1px solid {COLOR_BORDER}"})
+                    ], style={"marginBottom": "16px", "paddingBottom": "16px",
+                            "borderBottom": f"1px solid {COLOR_BORDER}"})
                     for n, f, d in [
-                        ("RANS", "(Red+NIR)/(Red+NIR+Blue+Green+SWIR1+SWIR2)", "Índice normalizado para sedimentos"),
-                        ("VNES", "(Red+RE1+NIR)/(Blue+Green+Red+NIR+SWIR1+SWIR2)", "Variante extendida con red edge"),
-                        ("NDTI", "(Red−Green)/(Red+Green)", "Índice de turbidez normalizado"),
-                        ("NIR/RED", "(NIR)/(Red)", "Relación simple entre NIR y rojo"),
+                        ("RANS",    "(Red+NIR)/(Red+NIR+Blue+Green+SWIR1+SWIR2)",      "Índice normalizado para sedimentos"),
+                        ("VNES",    "(Red+RE1+NIR)/(Blue+Green+Red+NIR+SWIR1+SWIR2)",  "Variante extendida con red edge"),
+                        ("NDTI",    "(Red−Green)/(Red+Green)",                          "Índice de turbidez normalizado"),
+                        ("NIR/RED", "(NIR)/(Red)",                                      "Relación simple entre NIR y rojo"),
                     ]
                 ]),
             ]),
         ]),
-        html.Div(style={**CARD}, children=[
-            section_title("Transporte de sedimentos en suspensión (TSS)"),
-            html.Div("TSS [ton/día] = CSS [mg/L] × Q [m³/s] × 0.0864",
-                     style={"fontFamily": "monospace", "fontSize": "15px",
-                            "backgroundColor": f"{COLOR_ACCENT}10", "border": f"1px solid {COLOR_ACCENT}30",
-                            "borderRadius": "6px", "padding": "14px 20px", "color": COLOR_TEXT, "marginBottom": "12px"}),
+html.Div(style={**CARD}, children=[
+    section_title("Fórmulas derivadas", "Navega entre las variables calculadas"),
+
+    # Store índice actual
+    dcc.Store(id="formula-idx", data=0),
+
+    # Tarjeta
+    html.Div(style={"position": "relative"}, children=[
+
+        # Tag
+        html.Div(id="formula-tag", style={"marginBottom": "12px"}),
+
+        # Título y subtítulo
+        html.P(id="formula-title",
+               style={"fontSize": "15px", "fontWeight": "500",
+                      "color": COLOR_TEXT, "margin": "0 0 4px"}),
+        html.P(id="formula-sub",
+               style={"fontSize": "12px", "color": COLOR_MUTED, "margin": "0 0 4px"}),
+
+        # Fórmula
+        html.Div(id="formula-box",
+                 style={"fontFamily": "monospace", "fontSize": "15px",
+                        "backgroundColor": f"{COLOR_ACCENT}10",
+                        "border": f"1px solid {COLOR_ACCENT}30",
+                        "borderRadius": "6px", "padding": "14px 20px",
+                        "color": COLOR_TEXT, "margin": "16px 0"}),
+
+        # Descripción
+        html.P(id="formula-desc",
+               style={"fontSize": "13px", "color": COLOR_MUTED,
+                      "lineHeight": "1.7", "margin": "0"}),
+
+        # Navegación
+        html.Div(style={"display": "flex", "alignItems": "center",
+                        "justifyContent": "space-between", "marginTop": "20px"}, children=[
+            html.Button("←", id="formula-prev", n_clicks=0,
+                        style={"background": "none", "border": f"0.5px solid {COLOR_BORDER}",
+                               "borderRadius": "6px", "padding": "6px 14px",
+                               "fontSize": "18px", "cursor": "pointer", "color": COLOR_TEXT}),
+            html.Span(id="formula-counter",
+                      style={"fontSize": "12px", "color": COLOR_MUTED}),
+            html.Button("→", id="formula-next", n_clicks=0,
+                        style={"background": "none", "border": f"0.5px solid {COLOR_BORDER}",
+                               "borderRadius": "6px", "padding": "6px 14px",
+                               "fontSize": "18px", "cursor": "pointer", "color": COLOR_TEXT}),
         ]),
-        html.Div(style={**CARD}, children=[
-            section_title("SSC derivado de TSS y Caudal"),
-            html.Div("SSC [mg/l] = TSS / Q ",
-                     style={"fontFamily": "monospace", "fontSize": "15px",
-                            "backgroundColor": f"{COLOR_ACCENT}10", "border": f"1px solid {COLOR_ACCENT}30",
-                            "borderRadius": "6px", "padding": "14px 20px", "color": COLOR_TEXT, "marginBottom": "12px"}),
-        ]),
+    ]),
+]),
     ])
 
 
@@ -538,7 +651,7 @@ html.Div(style={**CARD}, children=[
         dcc.Dropdown(
             id="stats-var-dropdown",
             options=[{"label": v, "value": v} for v in BANDAS],
-            value=SSCS[0],
+            value=SSCS[1],
             clearable=False,
             style={"minWidth": "180px", "fontSize": "13px"},
         ),
@@ -557,8 +670,8 @@ dcc.Store(id="stats-group", data="bandas"),
             html.Div(style={"display": "flex", "gap": "16px", "marginBottom": "16px",
                             "alignItems": "center", "flexWrap": "wrap"}, children=[
                 html.Label("Fecha:", style={"fontSize": "13px", "color": COLOR_MUTED, "fontWeight": "600"}),
-                dcc.Dropdown(id="profile-fecha", options=[], value = "11/06/2025",placeholder="Selecciona una fecha",
-                             clearable=False, style={"width": "180px", "fontSize": "13px"}),
+                dcc.Dropdown(id="profile-fecha", options=[], placeholder="Selecciona una fecha",
+                                clearable=False, style={"width": "180px", "fontSize": "13px"}),
                 html.Label("Km:", style={"fontSize": "13px", "color": COLOR_MUTED, "fontWeight": "600", "marginLeft": "8px"}),
                 dcc.Dropdown(id="profile-km", options=[], placeholder="Km",
                              clearable=False, style={"width": "110px", "fontSize": "13px"}),
@@ -664,6 +777,7 @@ dcc.Store(id="stats-group", data="bandas"),
                 dcc.Tab(label="Estacionalidad",     value="hydro-seas", style=TAB_STYLE, selected_style=TAB_SELECTED),
                 dcc.Tab(label="Q vs TSS Calamar",   value="hydro-qtss", style=TAB_STYLE, selected_style=TAB_SELECTED),
                 dcc.Tab(label="Q Calamar vs Q Baq", value="hydro-qq",   style=TAB_STYLE, selected_style=TAB_SELECTED),
+                dcc.Tab(label="Q calamar - Q Inkoras", value="hydro-qincora", style=TAB_STYLE, selected_style=TAB_SELECTED),
                 dcc.Tab(label="TSS Barranquilla",   value="hydro-tss",  style=TAB_STYLE, selected_style=TAB_SELECTED),
             ]),
 
@@ -676,7 +790,7 @@ dcc.Store(id="stats-group", data="bandas"),
                     id="hydro-year-slider",
                     min=HYDRO_YEAR_MIN, max=HYDRO_YEAR_MAX,
                     step=1,
-                    value=[2010, HYDRO_YEAR_MAX],
+                    value=[2022, HYDRO_YEAR_MAX],
                     marks={y: str(y) for y in range(HYDRO_YEAR_MIN, HYDRO_YEAR_MAX+1, 10)},
                     tooltip={"placement": "bottom", "always_visible": True},
                 ),
@@ -1088,77 +1202,104 @@ def update_corr(transform, data):
 
 
 # ── Perfiles: poblar fechas ──
-@app.callback(Output("profile-fecha","options"), Input("tabs","value"))
+@app.callback(
+    Output("profile-fecha", "options"),
+    Output("profile-fecha", "value"),
+    Input("tabs", "value")
+)
 def populate_fechas(tab):
-    if tab!="eda" or df_profiles.empty: return []
+    if tab != "eda" or df_profiles.empty:
+        return [], None
     fechas = sorted(df_profiles["fecha"].unique())
-    return [{"label":pd.Timestamp(f).strftime("%d/%m/%Y"),"value":str(f)} for f in fechas]
+    options = [{"label": pd.Timestamp(f).strftime("%d/%m/%Y"), "value": str(f)} for f in fechas]
+    return options, str(fechas[0]) if fechas else None
+
 
 # ── Perfiles: poblar km ──
-@app.callback(Output("profile-km","options"), Output("profile-km","value"),
-              Input("profile-fecha","value"))
+@app.callback(
+    Output("profile-km", "options"),
+    Output("profile-km", "value"),
+    Input("profile-fecha", "value")
+)
 def populate_kms(fecha_str):
-    if not fecha_str or df_profiles.empty: return [], None
-    sub = df_profiles[df_profiles["fecha"]==pd.Timestamp(fecha_str)]
+    if not fecha_str or df_profiles.empty:
+        return [], None
+    sub = df_profiles[df_profiles["fecha"] == pd.Timestamp(fecha_str)]
     kms = sorted(sub["km"].unique())
-    return [{"label":f"Km {k}","value":k} for k in kms], (kms[0] if kms else None)
+    return [{"label": f"Km {k}", "value": k} for k in kms], (kms[0] if kms else None)
+
 
 # ── Perfiles: poblar +m ──
-@app.callback(Output("profile-pm","options"), Output("profile-pm","value"),
-              Input("profile-fecha","value"), Input("profile-km","value"))
+@app.callback(
+    Output("profile-pm", "options"),
+    Output("profile-pm", "value"),
+    Input("profile-fecha", "value"),
+    Input("profile-km", "value")
+)
 def populate_pm(fecha_str, km_val):
-    if not fecha_str or km_val is None or df_profiles.empty: return [], None
-    sub = df_profiles[(df_profiles["fecha"]==pd.Timestamp(fecha_str))&(df_profiles["km"]==km_val)]
+    if not fecha_str or km_val is None or df_profiles.empty:
+        return [], None
+    sub = df_profiles[(df_profiles["fecha"] == pd.Timestamp(fecha_str)) & (df_profiles["km"] == km_val)]
     pms = sorted(sub["+m"].unique())
-    return [{"label":f"+{p} m","value":p} for p in pms], (pms[0] if pms else None)
+    return [{"label": f"+{p} m", "value": p} for p in pms], (pms[0] if pms else None)
+
 
 # ── Perfiles: graficar ──
-@app.callback(Output("profile-plot","figure"), Output("profile-stats","children"),
-              Input("profile-fecha","value"), Input("profile-km","value"), Input("profile-pm","value"))
+@app.callback(
+    Output("profile-plot", "figure"),
+    Output("profile-stats", "children"),
+    Input("profile-fecha", "value"),
+    Input("profile-km", "value"),
+    Input("profile-pm", "value")
+)
 def update_profile(fecha_str, km_val, pm_val):
-    empty=go.Figure()
-    empty.update_layout(paper_bgcolor=COLOR_CARD,plot_bgcolor=COLOR_BG,
-                        height=480,margin=dict(l=60,r=20,t=30,b=50))
-    if not fecha_str or km_val is None or pm_val is None or df_profiles.empty: return empty,""
-    sub = df_profiles[(df_profiles["fecha"]==pd.Timestamp(fecha_str))&
-                      (df_profiles["km"]==km_val)&(df_profiles["+m"]==pm_val)].sort_values("depth",ascending=False)
-    if sub.empty: return empty,""
-    color=KM_COLORS.get(km_val,COLOR_ACCENT)
-    ssc_4=sub[sub["depth"]<=4]["ssc"].mean(); ssc_7=sub[sub["depth"]<=7]["ssc"].mean()
-    ssc_tot=sub["ssc"].mean(); fecha_l=pd.Timestamp(fecha_str).strftime("%d/%m/%Y")
-    fig=go.Figure()
-    fig.add_trace(go.Scatter(x=sub["ssc"],y=sub["depth"],mode="lines+markers",
-                             line=dict(color=color,width=2.5),
-                             marker=dict(size=6,color=color,line=dict(width=1,color="white")),
+    empty = go.Figure()
+    empty.update_layout(paper_bgcolor=COLOR_CARD, plot_bgcolor=COLOR_BG,
+                        height=480, margin=dict(l=60, r=20, t=30, b=50))
+    if not fecha_str or km_val is None or pm_val is None or df_profiles.empty:
+        return empty, ""
+    sub = df_profiles[(df_profiles["fecha"] == pd.Timestamp(fecha_str)) &
+                      (df_profiles["km"] == km_val) &
+                      (df_profiles["+m"] == pm_val)].sort_values("depth", ascending=False)
+    if sub.empty:
+        return empty, ""
+    color = KM_COLORS.get(km_val, COLOR_ACCENT)
+    ssc_4   = sub[sub["depth"] <= 4]["ssc"].mean()
+    ssc_7   = sub[sub["depth"] <= 7]["ssc"].mean()
+    ssc_tot = sub["ssc"].mean()
+    fecha_l = pd.Timestamp(fecha_str).strftime("%d/%m/%Y")
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=sub["ssc"], y=sub["depth"], mode="lines+markers",
+                             line=dict(color=color, width=2.5),
+                             marker=dict(size=6, color=color, line=dict(width=1, color="white")),
                              hovertemplate="Prof: %{y:.2f} m<br>SSC: %{x:.1f} mg/L<extra></extra>"))
-    for d_ref,dash_ref in [(4,"dash"),(7,"dot")]:
-        fig.add_shape(type="line",x0=sub["ssc"].min()*0.95,x1=sub["ssc"].max()*1.05,
-                      y0=d_ref,y1=d_ref,line=dict(color="gray",width=1,dash=dash_ref))
-        fig.add_annotation(x=sub["ssc"].max()*1.04,y=d_ref,text=f"{d_ref} m",
-                           showarrow=False,font=dict(size=10,color="gray"),xanchor="right")
-    fig.update_layout(height=480,paper_bgcolor=COLOR_CARD,plot_bgcolor=COLOR_BG,
-                      font=dict(family=FONT_BODY,size=12,color=COLOR_TEXT),
-                      xaxis=dict(title="SSC (mg/L)",showgrid=True,gridcolor=COLOR_BORDER),
-                      yaxis=dict(title="Profundidad (m)",autorange="reversed",showgrid=True,gridcolor=COLOR_BORDER),
-                      margin=dict(l=60,r=30,t=40,b=50),hovermode="y unified",
+    for d_ref, dash_ref in [(4, "dash"), (7, "dot")]:
+        fig.add_shape(type="line", x0=sub["ssc"].min()*0.95, x1=sub["ssc"].max()*1.05,
+                      y0=d_ref, y1=d_ref, line=dict(color="gray", width=1, dash=dash_ref))
+        fig.add_annotation(x=sub["ssc"].max()*1.04, y=d_ref, text=f"{d_ref} m",
+                           showarrow=False, font=dict(size=10, color="gray"), xanchor="right")
+    fig.update_layout(height=480, paper_bgcolor=COLOR_CARD, plot_bgcolor=COLOR_BG,
+                      font=dict(family=FONT_BODY, size=12, color=COLOR_TEXT),
+                      xaxis=dict(title="SSC (mg/L)", showgrid=True, gridcolor=COLOR_BORDER),
+                      yaxis=dict(title="Profundidad (m)", autorange="reversed", showgrid=True, gridcolor=COLOR_BORDER),
+                      margin=dict(l=60, r=30, t=40, b=50), hovermode="y unified",
                       title=dict(text=f"Perfil SSC — Km {km_val}, +{pm_val} m | {fecha_l}",
-                                 font=dict(family=FONT_TITLE,size=14,color=COLOR_TEXT),x=0.5))
-    stats=html.Div(style={"display":"flex","gap":"12px","flexWrap":"wrap"},children=[
-        html.Div([html.Div("Promedio total",style={"fontSize":"11px","color":COLOR_MUTED,"textTransform":"uppercase","letterSpacing":"0.05em"}),
-                  html.Div(f"{ssc_tot:.1f} mg/L",style={"fontSize":"18px","fontWeight":"700","color":COLOR_ACCENT,"fontFamily":FONT_TITLE})],
-                 style={**CARD,"padding":"12px 20px","marginBottom":"0"}),
-        html.Div([html.Div("Promedio 0–4 m",style={"fontSize":"11px","color":COLOR_MUTED,"textTransform":"uppercase","letterSpacing":"0.05em"}),
-                  html.Div(f"{ssc_4:.1f} mg/L",style={"fontSize":"18px","fontWeight":"700","color":color,"fontFamily":FONT_TITLE})],
-                 style={**CARD,"padding":"12px 20px","marginBottom":"0"}),
-        html.Div([html.Div("Promedio 0–7 m",style={"fontSize":"11px","color":COLOR_MUTED,"textTransform":"uppercase","letterSpacing":"0.05em"}),
-                  html.Div(f"{ssc_7:.1f} mg/L",style={"fontSize":"18px","fontWeight":"700","color":color,"fontFamily":FONT_TITLE})],
-                 style={**CARD,"padding":"12px 20px","marginBottom":"0"}),
-        html.Div([html.Div("N mediciones",style={"fontSize":"11px","color":COLOR_MUTED,"textTransform":"uppercase","letterSpacing":"0.05em"}),
-                  html.Div(str(len(sub)),style={"fontSize":"18px","fontWeight":"700","color":COLOR_MUTED,"fontFamily":FONT_TITLE})],
-                 style={**CARD,"padding":"12px 20px","marginBottom":"0"}),
+                                 font=dict(family=FONT_TITLE, size=14, color=COLOR_TEXT), x=0.5))
+    stats = html.Div(style={"display": "flex", "gap": "12px", "flexWrap": "wrap"}, children=[
+        html.Div([html.Div("Promedio total", style={"fontSize":"11px","color":COLOR_MUTED,"textTransform":"uppercase","letterSpacing":"0.05em"}),
+                  html.Div(f"{ssc_tot:.1f} mg/L", style={"fontSize":"18px","fontWeight":"700","color":COLOR_ACCENT,"fontFamily":FONT_TITLE})],
+                 style={**CARD, "padding":"12px 20px", "marginBottom":"0"}),
+        html.Div([html.Div("Promedio 0–4 m", style={"fontSize":"11px","color":COLOR_MUTED,"textTransform":"uppercase","letterSpacing":"0.05em"}),
+                  html.Div(f"{ssc_4:.1f} mg/L", style={"fontSize":"18px","fontWeight":"700","color":color,"fontFamily":FONT_TITLE})],
+                 style={**CARD, "padding":"12px 20px", "marginBottom":"0"}),
+        html.Div([html.Div("Promedio 0–7 m", style={"fontSize":"11px","color":COLOR_MUTED,"textTransform":"uppercase","letterSpacing":"0.05em"}),
+                  html.Div(f"{ssc_7:.1f} mg/L", style={"fontSize":"18px","fontWeight":"700","color":color,"fontFamily":FONT_TITLE})],
+                 style={**CARD, "padding":"12px 20px", "marginBottom":"0"}),
+        html.Div([html.Div("N mediciones", style={"fontSize":"11px","color":COLOR_MUTED,"textTransform":"uppercase","letterSpacing":"0.05em"}),
+                  html.Div(str(len(sub)), style={"fontSize":"18px","fontWeight":"700","color":COLOR_MUTED,"fontFamily":FONT_TITLE})],
+                 style={**CARD, "padding":"12px 20px", "marginBottom":"0"}),
     ])
-    return fig,stats
-
+    return fig, stats
 
 # ── Hidrología: contenido según sub-tab y slider ──
 @app.callback(
@@ -1188,22 +1329,33 @@ def update_hydro(subtab, year_range):
         QGf  = filter_df(Q_baq)
         merged = Qf.merge(TSSf, on="Fecha", how="inner").dropna(subset=["Q_calamar","TSS_calamar"])
         merged ['ssc_derived'] = ((merged["TSS_calamar"]*(1000000/86400)) / merged["Q_calamar"])*(1000000/1000)  # mg/L
+        merged ['Q_sinincora'] = merged['Q_calamar']-(0.080649*merged['Q_calamar']- 126.19)
+        print("Qf vacío:", Qf.empty)
+        print("TSSf vacío:", TSSf.empty)
+        print("merged vacío:", merged.empty)
+        print("merged filas:", len(merged))
         
         fig  = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.08,
                              subplot_titles=["Caudal (m³/s)", "TSS Calamar (Kt/día)", "SSC Derivado (mg/L)"])
         if not Qf.empty:
             fig.add_trace(go.Scatter(x=Qf["Fecha"], y=Qf["Q_calamar"], mode="lines",
                                      name="Q Calamar", line=dict(color=COLOR_ACCENT, width=1.5)), row=1,col=1)
+            
         if not QGf.empty:
             fig.add_trace(go.Scatter(x=QGf["Fecha"], y=QGf["Q_barranquilla"], mode="markers+lines",
                                      name="Q Barranquilla", line=dict(color="#e07b2a", width=2),
                                      marker=dict(size=7)), row=1,col=1)
+            fig.add_trace(go.Scatter(x=merged["Fecha"], y=merged["Q_sinincora"], mode="lines",
+                            name="Q calamar - Q Incora derivado", 
+                            line=dict(color="red", width=2.5)),  # ← gordo y rojo
+                row=1, col=1)
         if not TSSf.empty:
-            fig.add_trace(go.Scatter(x=TSSf["Fecha"], y=TSSf["TSS_calamar"], mode="lines",
+            fig.add_trace(go.Scatter(x=merged["Fecha"], y=TSSf["TSS_calamar"], mode="lines",
                                      name="TSS Calamar", line=dict(color="#c0392b", width=1.5)), row=2,col=1)
         if not merged.empty:
             fig.add_trace(go.Scatter(x=merged["Fecha"], y=merged["ssc_derived"], mode="lines",
                                      name="SSC Derivado", line=dict(color="#4bb929", width=1.5)), row=3,col=1)
+    
         fig.update_layout(height=520, paper_bgcolor=COLOR_CARD, plot_bgcolor=COLOR_BG,
                           font=dict(family=FONT_BODY, size=12, color=COLOR_TEXT),
                           legend=dict(orientation="h", y=-0.08),
@@ -1302,11 +1454,131 @@ def update_hydro(subtab, year_range):
                              "padding":"4px 10px","borderRadius":"4px","color":COLOR_MUTED}),
         ])
         return html.Div([dcc.Graph(figure=fig, config={"displayModeBar":False}), stats])
-
+    
         # ── Q Calamar vs Q Barranquilla ──
     elif subtab == "hydro-qq":
         Qf  = filter_df(Q_cal)
         QGf = filter_df(Q_baq)
+        fig = make_subplots(rows=1, cols=2,
+                            subplot_titles=["Series superpuestas", "Scatter Q Calamar vs Q Barranquilla"])
+        # Series
+        if not Qf.empty:
+            fig.add_trace(go.Scatter(x=Qf["Fecha"], y=Qf["Q_calamar"], mode="lines",
+                                     name="Q Calamar", line=dict(color=COLOR_ACCENT,width=1.5)), row=1,col=1)
+        if not QGf.empty:
+            fig.add_trace(go.Scatter(x=QGf["Fecha"], y=QGf["Q_barranquilla"], mode="markers+lines",
+                                     name="Q Barranquilla", line=dict(color="#e07b2a",width=2),
+                                     marker=dict(size=7)), row=1,col=1)
+        # Scatter — solo período coincidente
+        coincident = Qf.merge(QGf, on="Fecha", how="inner")
+        if not coincident.empty:
+            x2 = coincident["Q_calamar"]; y2 = coincident["Q_barranquilla"]
+            r2, p2 = pearsonr(x2, y2)
+            m2, b2 = np.polyfit(x2, y2, 1)
+            x_line2 = np.linspace(x2.min(), x2.max(), 200)
+            fig.add_trace(go.Scatter(x=x2, y=y2, mode="markers",
+                                     marker=dict(size=8, color=COLOR_ACCENT,
+                                                 line=dict(width=1,color="white")),
+                                     name="Coincidentes",
+                                     hovertemplate="Q Cal: %{x:.0f}<br>Q Baq: %{y:.0f}<extra></extra>"),
+                          row=1,col=2)
+            fig.add_trace(go.Scatter(x=x_line2, y=m2*x_line2+b2, mode="lines",
+                                     line=dict(color="#c0392b",width=2,dash="dash"),
+                                     name="Regresión", showlegend=False), row=1,col=2)
+            p_text2 = "< 0.0001" if p2 < 0.0001 else f"{p2:.4f}"
+            b2_sign = "+" if b2 >= 0 else "-"
+
+            fig.add_annotation(
+                x=0.97, y=0.05, xref="x2 domain", yref="y2 domain",
+                text=(f"y = {m2:.4f}x {b2_sign} {abs(b2):.2f}<br>"
+                    f"R² = {r2**2:.3f}   p = {p_text2}   n = {len(coincident)}"),
+                showarrow=False,
+                font=dict(size=11, color=COLOR_ACCENT),
+                bgcolor="rgba(26,107,154,0.08)",
+                borderpad=6,
+                align="left",
+            )
+        fig.update_layout(height=460, paper_bgcolor=COLOR_CARD, plot_bgcolor=COLOR_BG,
+                          font=dict(family=FONT_BODY,size=12,color=COLOR_TEXT),
+                          legend=dict(orientation="h",y=-0.12),
+                          margin=dict(l=60,r=20,t=40,b=60))
+        fig.update_xaxes(showgrid=False)
+        fig.update_yaxes(gridcolor=COLOR_BORDER)
+        fig.update_xaxes(title_text="Q Calamar (m³/s)", row=1, col=2)
+        fig.update_yaxes(title_text="Q Barranquilla (m³/s)", row=1, col=2)
+        return dcc.Graph(figure=fig, config={"displayModeBar":False})
+    
+            # ── Q Calamar - Incora vs Q Barranquilla ──
+    elif subtab == "hydro-qincora":
+        Qf  = filter_df(Q_cal)
+        QGf = filter_df(Q_baq)
+
+        merged = Qf.merge(QGf, on="Fecha", how="inner").dropna(subset=["Q_calamar","Q_barranquilla"])
+        merged["Q_sinincora"] = merged["Q_calamar"] - (0.080649 * merged["Q_calamar"] - 126.19)
+        merged = merged.dropna(subset=["Q_sinincora","Q_barranquilla"])
+
+        if merged.empty:
+            return dcc.Graph(figure=empty_fig, config={"displayModeBar":False})
+
+        fig = make_subplots(rows=1, cols=2,
+                            subplot_titles=["Series superpuestas", "Scatter Q Sinincora vs Q Barranquilla"])
+
+        # ── Col 1: series ──
+        if not Qf.empty:
+            fig.add_trace(go.Scatter(x=Qf["Fecha"], y=Qf["Q_calamar"], mode="lines",
+                                    name="Q Calamar", line=dict(color=COLOR_ACCENT, width=1.5)), row=1, col=1)
+        if not QGf.empty:
+            fig.add_trace(go.Scatter(x=QGf["Fecha"], y=QGf["Q_barranquilla"], mode="markers+lines",
+                                    name="Q Barranquilla", line=dict(color="#e07b2a", width=2),
+                                    marker=dict(size=7)), row=1, col=1)
+        fig.add_trace(go.Scatter(x=merged["Fecha"], y=merged["Q_sinincora"], mode="lines",
+                                name="Q Sinincora", line=dict(color="#c0392b", width=1.5)), row=1, col=1)
+
+        # ── Col 2: scatter ──
+        x2 = merged["Q_sinincora"]; y2 = merged["Q_barranquilla"]
+        r, p = pearsonr(x2, y2)
+        m, b = np.polyfit(x2, y2, 1)
+        x_line = np.linspace(x2.min(), x2.max(), 200)
+
+        fig.add_trace(go.Scatter(x=x2, y=y2, mode="markers",
+                                marker=dict(size=5, color=COLOR_ACCENT, opacity=0.5,
+                                            line=dict(width=0)),
+                                name="Coincidentes",
+                                hovertemplate="Q Sin: %{x:.0f} m³/s<br>Q Baq: %{y:.0f} m³/s<extra></extra>"),
+                    row=1, col=2)
+        fig.add_trace(go.Scatter(x=x_line, y=m*x_line+b, mode="lines",
+                                line=dict(color="#c0392b", width=2, dash="dash"),
+                                name="Regresión", showlegend=False), row=1, col=2)
+
+        p_text = "< 0.0001" if p < 0.0001 else f"{p:.4f}"
+        b_sign = "+" if b >= 0 else "-"
+
+        fig.add_annotation(
+            x=0.97, y=0.05, xref="x2 domain", yref="y2 domain",
+            text=(f"y = {m:.4f}x {b_sign} {abs(b):.2f}<br>"
+                f"R² = {r**2:.3f}   p = {p_text}   n = {len(merged)}"),
+            showarrow=False,
+            font=dict(size=11, color=COLOR_ACCENT),
+            bgcolor="rgba(26,107,154,0.08)",
+            borderpad=6,
+            align="left",
+        )
+
+        fig.update_layout(height=460, paper_bgcolor=COLOR_CARD, plot_bgcolor=COLOR_BG,
+                        font=dict(family=FONT_BODY, size=12, color=COLOR_TEXT),
+                        legend=dict(orientation="h", y=-0.12),
+                        margin=dict(l=60, r=20, t=40, b=60))
+        fig.update_xaxes(showgrid=False)
+        fig.update_yaxes(gridcolor=COLOR_BORDER)
+        fig.update_xaxes(title_text="Q Sin Inkora (m³/s)", row=1, col=2)
+        fig.update_yaxes(title_text="Q Barranquilla (m³/s)", row=1, col=2)
+
+        return dcc.Graph(figure=fig, config={"displayModeBar":False})
+    
+    elif subtab == "hydro-qq":
+        Qf  = filter_df(Q_cal)
+        QGf = filter_df(Q_baq)
+        incor = merged()
         fig = make_subplots(rows=1, cols=2,
                             subplot_titles=["Series superpuestas", "Scatter Q Calamar vs Q Barranquilla"])
         # Series
@@ -1638,5 +1910,167 @@ app.clientside_callback(
     Input("filter-card", "id"),
 )
 
+
+FORMULAS = [
+    {
+        "tag": "Sedimentos",
+        "tag_bg": f"{COLOR_ACCENT}15", "tag_color": COLOR_ACCENT,
+        "title": "Transporte de sedimentos en suspensión (TSS)",
+        "sub": "Conversión de concentración y caudal a flujo másico diario",
+        "formula": "TSS [ton/día] = SSC [mg/L] × Q [m³/s] × 0.0864",
+        "desc": "El factor 0.0864 convierte mg/L × m³/s a toneladas por día. "
+                "Expresa cuántas toneladas de sedimento pasan por la sección cada día.",
+    },
+    {
+        "tag": "Derivado",
+        "tag_bg": "#E1F5EE", "tag_color": "#085041",
+        "title": "SSC derivado de TSS y caudal",
+        "sub": "Estimación inversa de concentración a partir de datos hidrológicos",
+        "formula": "SSC [mg/L] = ( TSS [Kt/día] × 10⁶ / 86400 ) / Q [m³/s] × 10⁶ / 10³",
+        "desc": "Permite estimar la concentración de sedimentos cuando se dispone de TSS "
+                "en Calamar y caudal simultáneo. Sirve como referencia independiente para "
+                "validar estimaciones satelitales.",
+    },
+    {
+        "tag": "Hidrología",
+        "tag_bg": "#FAEEDA", "tag_color": "#633806",
+        "title": "Caudal aguas abajo del Canal del Dique",
+        "sub": "Corrección por pérdida de caudal hacia el Canal del Dique",
+        "formula": "Q_sinincora [m³/s] = Q_calamar − ( 0.080649 × Q_calamar − 126.19 )",
+        "desc": "La estación Calamar se ubica aguas arriba de la bifurcación con el Canal del Dique — "
+                "canal artificial que desvía parte del caudal hacia la bahía de Cartagena. "
+                "Esta fórmula empírica descuenta ese caudal derivado, estimando el caudal real "
+                "que continúa por el Magdalena hacia Barranquilla.",
+    },
+]
+
+@app.callback(
+    Output("formula-idx", "data"),
+    Input("formula-prev", "n_clicks"),
+    Input("formula-next", "n_clicks"),
+    State("formula-idx", "data"),
+    prevent_initial_call=True,
+)
+def nav_formula(prev, nxt, idx):
+    triggered = ctx.triggered_id
+    if triggered == "formula-prev":
+        return max(0, idx - 1)
+    return min(len(FORMULAS) - 1, idx + 1)
+
+
+@app.callback(
+    Output("formula-tag",     "children"),
+    Output("formula-title",   "children"),
+    Output("formula-sub",     "children"),
+    Output("formula-box",     "children"),
+    Output("formula-desc",    "children"),
+    Output("formula-counter", "children"),
+    Input("formula-idx", "data"),
+)
+def render_formula(idx):
+    f = FORMULAS[idx]
+    tag = html.Span(f["tag"], style={
+        "fontSize": "11px", "fontWeight": "500",
+        "padding": "3px 10px", "borderRadius": "6px",
+        "background": f["tag_bg"], "color": f["tag_color"],
+    })
+    return tag, f["title"], f["sub"], f["formula"], f["desc"], f"{idx+1} / {len(FORMULAS)}"
+
+
+BANDS_S2 = [
+    {"name": "Aerosol (B1)",     "lambda": 443,  "res": "60 m", "width": 20,  "color": "#7F77DD",
+     "desc": "Detección de aerosoles costeros. Útil para corrección atmosférica."},
+    {"name": "Blue (B2)",        "lambda": 492,  "res": "10 m", "width": 66,  "color": "#378ADD",
+     "desc": "Alta reflectancia en agua clara. Sensible a sedimentos finos en suspensión."},
+    {"name": "Green (B3)",       "lambda": 560,  "res": "10 m", "width": 36,  "color": "#639922",
+     "desc": "Pico de reflectancia del agua. Correlaciona bien con concentración de sedimentos."},
+    {"name": "Red (B4)",         "lambda": 665,  "res": "10 m", "width": 31,  "color": "#E24B4A",
+     "desc": "Fuerte absorción en agua con sedimentos. Clave para índices como NDTI."},
+    {"name": "Red Edge 1 (B5)", "lambda": 704,  "res": "20 m", "width": 15,  "color": "#D85A30",
+     "desc": "Transición rojo-NIR. Sensible a fitoplancton y material orgánico."},
+    {"name": "Red Edge 2 (B6)", "lambda": 740,  "res": "20 m", "width": 15,  "color": "#BA7517",
+     "desc": "Complementa B5 para análisis de vegetación acuática."},
+    {"name": "Red Edge 3 (B7)", "lambda": 783,  "res": "20 m", "width": 20,  "color": "#854F0B",
+     "desc": "Permite separar sedimentos de clorofila."},
+    {"name": "NIR (B8)",         "lambda": 833,  "res": "10 m", "width": 106, "color": "#3C3489",
+     "desc": "Muy alta reflectancia en agua turbia con sedimentos gruesos."},
+    {"name": "Red Edge 4 (B8A)","lambda": 865,  "res": "20 m", "width": 21,  "color": "#534AB7",
+     "desc": "Alta sensibilidad a SSC en aguas turbias."},
+    {"name": "SWIR1 (B11)",      "lambda": 1614, "res": "20 m", "width": 91,  "color": "#0F6E56",
+     "desc": "Penetra neblina leve. Discrimina humedad en sedimentos."},
+    {"name": "SWIR2 (B12)",      "lambda": 2202, "res": "20 m", "width": 175, "color": "#085041",
+     "desc": "Alta absorción en agua. Útil para mapeo de sedimentos costeros."},
+]
+
+MIN_NM, MAX_NM = 400, 2400
+
+def nm_to_pct(nm):
+    return (nm - MIN_NM) / (MAX_NM - MIN_NM) * 100
+
+@app.callback(
+    Output("bands-overlay", "children"),
+    Input("tabs", "value")
+)
+def render_bands(_):
+    bars = []
+    for i, b in enumerate(BANDS_S2):
+        left  = nm_to_pct(b["lambda"] - b["width"] / 2)
+        width = max(nm_to_pct(b["width"]), 0.8)
+        height = {"10 m": 100, "20 m": 76, "60 m": 52}.get(b["res"], 76)
+        bars.append(
+            html.Div(
+                id={"type": "band-bar", "index": i},
+                n_clicks=0,
+                title=b["name"],
+                style={
+                    "position": "absolute", "left": f"{left}%",
+                    "width": f"{width}%", "bottom": "24px",
+                    "height": f"{height}px", "background": b["color"],
+                    "opacity": "0.82", "borderRadius": "4px",
+                    "cursor": "pointer", "border": "1.5px solid transparent",
+                },
+                children=html.Div(str(b["lambda"]),
+                                  style={"position": "absolute", "top": "-18px",
+                                         "left": "50%", "transform": "translateX(-50%)",
+                                         "fontSize": "9px", "whiteSpace": "nowrap",
+                                         "color": COLOR_MUTED, "pointerEvents": "none"})
+            )
+        )
+    return bars
+
+
+@app.callback(
+    Output("band-info", "children"),
+    Input({"type": "band-bar", "index": ALL}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def show_band_info(clicks):
+    if not any(clicks):
+        return ""
+    i = next(j for j, c in enumerate(clicks) if c and c == max(c2 for c2 in clicks if c2))
+    b = BANDS_S2[i]
+    res_styles = {
+        "10 m":  {"bg": "#E6F1FB", "color": "#0C447C"},
+        "20 m":  {"bg": "#E1F5EE", "color": "#085041"},
+        "60 m":  {"bg": "#FAEEDA", "color": "#633806"},
+    }
+    rs = res_styles.get(b["res"], {})
+    return html.Div([
+        html.Div(style={"display": "flex", "alignItems": "center", "gap": "10px",
+                        "marginBottom": "8px"}, children=[
+            html.Div(style={"width": "12px", "height": "12px", "borderRadius": "3px",
+                            "background": b["color"], "flexShrink": "0"}),
+            html.Span(b["name"], style={"fontSize": "14px", "fontWeight": "600",
+                                        "color": COLOR_TEXT}),
+            html.Span(b["res"], style={"fontSize": "11px", "fontWeight": "500",
+                                       "padding": "2px 8px", "borderRadius": "6px",
+                                       "background": rs["bg"], "color": rs["color"]}),
+            html.Span(f"λ = {b['lambda']} nm",
+                      style={"fontSize": "12px", "color": COLOR_MUTED, "marginLeft": "auto"}),
+        ]),
+        html.P(b["desc"], style={"fontSize": "13px", "color": COLOR_MUTED,
+                                  "margin": "0", "lineHeight": "1.6"}),
+    ])
+    
 if __name__ == "__main__":
     app.run(debug=True)

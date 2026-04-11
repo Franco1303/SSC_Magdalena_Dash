@@ -28,7 +28,7 @@ sedimentos en suspensión (CSS) en el tramo estuarino del río Magdalena, Barran
 
 ```
 
-&#x20;  git clone https://github.com/TU\_USUARIO/css-magdalena-eda.git
+https://github.com/Franco1303/SSC_Magdalena_Dasht
 
 &#x20;  cd css-magdalena-eda
 
@@ -52,6 +52,8 @@ sedimentos en suspensión (CSS) en el tramo estuarino del río Magdalena, Barran
 
 3\. Instala las dependencias:
 
+En su ambiente virtual corra el siguiente comando para instalar todos los paquetes requeridos.
+
 ```
 
 &#x20;  pip install -r requirements.txt
@@ -61,6 +63,8 @@ sedimentos en suspensión (CSS) en el tramo estuarino del río Magdalena, Barran
 
 
 4\. Corre la app:
+
+En este paso ya deberia poder correr la app a traves del script app.py
 
 ```
 
@@ -80,7 +84,7 @@ sedimentos en suspensión (CSS) en el tramo estuarino del río Magdalena, Barran
 
 \- `app.py` — aplicación principal Dash
 
-\- `puntos\_finales2.csv` — dataset final de calibración (reflectancia + CSS)
+\- `puntos_alternativos.csv` — dataset final de calibración (reflectancia + CSS)
 
 \- `Q\_MEDIA\_D@29037020.data` — serie de caudal diario estación Calamar
 
